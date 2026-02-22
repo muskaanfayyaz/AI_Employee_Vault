@@ -178,6 +178,8 @@
   },
   "active": "448c298898861e7d",
   "lastOpenFiles": [
+    "Config/gmail_token.json",
+    "Config/gmail_credentials.json",
     "Plans/PLAN_email-19c0b73a-domain-sales-ending-soon.md",
     "Plans/PLAN_email-19c06324-introducing-a-more-intelligent-lovable.md",
     "Done/email-19c0b73a-domain-sales-ending-soon.md",
@@ -211,8 +213,6 @@
     "Plans/PLAN_email-19c802ce-submission-of-resignation-frontend-developer-pos.md",
     "Needs_Action/email-19c802ce-submission-of-resignation-frontend-developer-pos.md",
     "src/skills/__pycache__/executor.cpython-312.pyc.133469928036528",
-    "src/watchers/__pycache__/gmail.cpython-312.pyc.133470415895248",
-    "src/__pycache__/main.cpython-312.pyc.133470419718016",
-    "history/prompts/001-ai-employee-system/0014-silver-tier-email-drafter-wired.green.prompt.md"
+    "src/watchers/__pycache__/gmail.cpython-312.pyc.133470415895248"
   ]
 }

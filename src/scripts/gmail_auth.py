@@ -84,12 +84,32 @@ def main() -> int:
         return 1
 
     logger.info("Found credentials: %s", credentials_path)
-    logger.info("Starting OAuth2 flow — your browser will open...")
 
     flow = InstalledAppFlow.from_client_secrets_file(
         str(credentials_path), SCOPES
     )
-    creds = flow.run_local_server(port=8080, open_browser=False)
+    # WSL2-compatible manual flow: browser can't reach WSL2's localhost server,
+    # so we print the auth URL and ask the user to paste back the redirect URL.
+    flow.redirect_uri = "http://localhost:8080/"
+    auth_url, _ = flow.authorization_url(prompt="consent", access_type="offline")
+
+    print(
+        "\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "  STEP 1 — Open this URL in your Windows browser:\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        f"\n{auth_url}\n\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        "  STEP 2 — After you click 'Allow', your browser\n"
+        "  will redirect to localhost:8080 (page may fail).\n"
+        "  Copy the FULL URL from the browser address bar.\n"
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    )
+    redirect_response = input("Paste the full redirect URL here: ").strip()
+    # Allow http://localhost redirect — safe for local auth scripts only.
+    os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
+    flow.fetch_token(authorization_response=redirect_response)
+    creds = flow.credentials
 
     token_path.write_text(creds.to_json(), encoding="utf-8")
     logger.info("Token saved: %s", token_path)
