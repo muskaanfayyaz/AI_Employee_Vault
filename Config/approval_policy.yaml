@@ -1,0 +1,69 @@
+# Approval Policy — AI Employee System
+# Implements FR-017 (approval required) and FR-018 (auto-approved).
+#
+# The ApprovalManager reads this file to determine whether a given
+# action requires human approval before execution.
+#
+# actions_requiring_approval: any action in this list MUST create an
+#   ApprovalRequest in /Pending_Approval and wait for a human decision.
+#
+# auto_approved_actions: safe, read-only, or non-sensitive actions that
+#   may proceed without human review.
+#
+# Principle IV: Approvals expire after 24h but are NEVER auto-approved.
+
+policy:
+  version: "1.0.0"
+
+  # FR-017 — these actions REQUIRE human approval before execution
+  actions_requiring_approval:
+    # Email
+    - send_email
+    - send_bulk_email
+    # Messaging
+    - send_message
+    - send_whatsapp_message
+    # Social media
+    - social_post
+    - publish_post
+    # Financial / ERP
+    - payment
+    - create_record        # Odoo write
+    - update_record        # Odoo write
+    - delete_record        # Odoo write
+    - odoo_write
+    # Contacts
+    - add_contact
+    - update_contact
+    # Data operations
+    - delete_data
+    - delete_file
+
+  # FR-018 — these actions are auto-approved (read-only or safe)
+  auto_approved_actions:
+    # Reads
+    - read_file
+    - read_email
+    - get_email
+    - search_email
+    - search_emails
+    - search_records       # Odoo read
+    - read_record          # Odoo read
+    - odoo_read
+    # Planning and reporting
+    - create_plan
+    - generate_report
+    - create_ceo_briefing
+    # Vault maintenance
+    - write_log
+    - update_dashboard
+    - move_to_done
+    - move_to_errors
+    - triage_item
+    # Health
+    - ping
+    - health_check
+    - mark_read
+
+  # Stale threshold — approvals older than this are flagged on the Dashboard
+  stale_threshold_hours: 24

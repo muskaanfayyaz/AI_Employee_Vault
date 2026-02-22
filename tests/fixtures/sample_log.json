@@ -1,0 +1,28 @@
+[
+  {
+    "timestamp": "2026-02-18T10:00:00+00:00",
+    "actor": "filesystem-watcher",
+    "action": "file_detected",
+    "item_id": "aaaaaaaa-0000-0000-0000-000000000001",
+    "from_state": "drop_folder",
+    "to_state": "needs_action",
+    "outcome": "success",
+    "duration_ms": 12,
+    "details": {"source_file": "drop_folder/sample_inbox_item.md"},
+    "approval": {"required": false, "status": "n/a", "approver": null},
+    "dry_run": false
+  },
+  {
+    "timestamp": "2026-02-18T10:05:00+00:00",
+    "actor": "process_needs_action",
+    "action": "processed_item",
+    "item_id": "aaaaaaaa-0000-0000-0000-000000000001",
+    "from_state": "needs_action",
+    "to_state": "done",
+    "outcome": "success",
+    "duration_ms": 245,
+    "details": {"plan_path": "Plans/PLAN_sample_inbox_item.md", "steps_generated": 3},
+    "approval": {"required": false, "status": "n/a", "approver": null},
+    "dry_run": false
+  }
+]

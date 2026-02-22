@@ -1,0 +1,218 @@
+{
+  "main": {
+    "id": "1d738a601735629b",
+    "type": "split",
+    "children": [
+      {
+        "id": "c5518562ca547fd8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "448c298898861e7d",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "f11eca4b28a957e5",
+    "type": "split",
+    "children": [
+      {
+        "id": "2c0742cf562a8c54",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "a6109da7292ebc62",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "82b5030e48ca4b70",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "816ee3d9675ee9af",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "bb6843db7854ffc0",
+    "type": "split",
+    "children": [
+      {
+        "id": "6d42dd2599e77efa",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8aa8957e75553dcb",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "f20aa44f16b12a62",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "dea872899a83df6a",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "a3be00a8a015ac2f",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "a9fef84b51122253",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "448c298898861e7d",
+  "lastOpenFiles": [
+    "Plans/PLAN_email-19c0b73a-domain-sales-ending-soon.md",
+    "Plans/PLAN_email-19c06324-introducing-a-more-intelligent-lovable.md",
+    "Done/email-19c0b73a-domain-sales-ending-soon.md",
+    "Done/email-19c0b56c-muskaan-your-48-hour-flash-deal-is-here.md",
+    "Done/email-19c06324-introducing-a-more-intelligent-lovable.md",
+    "Done/draft-email-e00f6700.md",
+    "Done/draft-email-608c257b.md",
+    "src/__pycache__/main.cpython-312.pyc.138033214295936",
+    "history/prompts/001-ai-employee-system/0017-approved-email-send-and-done.green.prompt.md",
+    "Approved/draft-email-e00f6700.md",
+    "Approved/draft-email-608c257b.md",
+    "Done/email-19c80e11-interview-invitation-frontend-developer-position.md",
+    "Pending_Approval/draft-email-e00f6700.md",
+    "In_Progress/email-19c80e11-interview-invitation-frontend-developer-position.md",
+    "Plans/PLAN_email-19c80e11-interview-invitation-frontend-developer-position.md",
+    "Needs_Action/email-19c80e11-interview-invitation-frontend-developer-position.md",
+    "Done/email-19c03127-skip-the-download-step.md",
+    "history/prompts/001-ai-employee-system/0016-gemini-email-drafter-swap.green.prompt.md",
+    "history/prompts/001-ai-employee-system/0016-gemini-email-drafter-swap.green.prompt.md.tmp.485.1771685105110",
+    "src/skills/email_drafter.py.tmp.485.1771684751400",
+    "src/skills/email_drafter.py.tmp.485.1771684256971",
+    "pyproject.toml.tmp.485.1771684225729",
+    "history/prompts/001-ai-employee-system/0015-claude-email-drafter-contextual.green.prompt.md",
+    "history/prompts/001-ai-employee-system/0015-claude-email-drafter-contextual.green.prompt.md.tmp.485.1771684091494",
+    "Needs_Action/email-19c06324-introducing-a-more-intelligent-lovable.md",
+    "Needs_Action/email-19c0b73a-domain-sales-ending-soon.md",
+    "Done/test_watcher_demo-metadata.md",
+    "src/skills/email_drafter.py.tmp.485.1771683932586",
+    "Done/email-19c802ce-submission-of-resignation-frontend-developer-pos.md",
+    "Pending_Approval/draft-email-608c257b.md",
+    "Plans/PLAN_email-19c802ce-submission-of-resignation-frontend-developer-pos.md",
+    "Needs_Action/email-19c802ce-submission-of-resignation-frontend-developer-pos.md",
+    "src/skills/__pycache__/executor.cpython-312.pyc.133469928036528",
+    "src/watchers/__pycache__/gmail.cpython-312.pyc.133470415895248",
+    "src/__pycache__/main.cpython-312.pyc.133470419718016",
+    "history/prompts/001-ai-employee-system/0014-silver-tier-email-drafter-wired.green.prompt.md"
+  ]
+}

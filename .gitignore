@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+
+# Claude / AI tooling
+.claude/
+
+# Obsidian vault metadata
+# .obsidian/
+
+# Logs
+Logs/
+*.log
+
+# Watcher temporary files
+.watcher_probe
+
+# Build artifacts
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+node_modules
+
+Config/gmail_token.json
+Config/gmail_credentials.json

@@ -1,0 +1,21 @@
+watcher:
+  name: "gmail-inbox"
+  type: "gmail"
+  enabled: true
+  polling_interval_seconds: 60
+  max_results: 50
+
+  # Path is relative to vault root.
+  state_file: "Config/gmail_processed_ids.json"
+
+  # Filters applied server-side via Gmail search query.
+  # All lists are additive (combined with AND).
+  filters:
+    keywords: []        # e.g. ["invoice", "urgent", "approval needed"]
+    senders: []         # e.g. ["boss@company.com", "client@example.com"]
+    labels: []          # e.g. ["STARRED", "CATEGORY_UPDATES"]
+
+  # Credential reference — env var NAME only, never the raw token value.
+  # Set GMAIL_OAUTH_TOKEN_PATH=/path/to/token.json in your .env file.
+  # Run 'python -m src.scripts.gmail_auth' to generate token.json.
+  credential_ref: GMAIL_OAUTH_TOKEN_PATH

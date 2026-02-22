@@ -1,0 +1,20 @@
+watcher:
+  name: "whatsapp-inbox"
+  type: "whatsapp"
+  enabled: false
+  polling_interval_seconds: 30
+  state_file: "Config/whatsapp_processed_ids.json"
+
+  # WhatsApp Business API endpoint.
+  # The phone_number_id is set at runtime — leave blank in dev/test.
+  api_url: "https://graph.facebook.com/v18.0"
+  phone_number_id: ""
+
+  # Contact / group filters.
+  # Empty lists = accept all messages.
+  filters:
+    contacts: []
+    groups: []
+
+  # Credential reference — MUST be an env var name, never a raw token.
+  credential_ref: WHATSAPP_API_TOKEN
