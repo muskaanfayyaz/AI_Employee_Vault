@@ -270,12 +270,14 @@ def _gemini_draft_reply(
 ) -> str:
     """Call Gemini to generate a contextual reply draft."""
     import os as _os
-    from google import genai  # type: ignore[import]
+    import requests as _requests  # type: ignore[import]
 
-    # Ensure our explicit key is used — suppress any GOOGLE_API_KEY env var
-    # that the new SDK prefers over GEMINI_API_KEY when both are set.
-    _os.environ.pop("GOOGLE_API_KEY", None)
-    client = genai.Client(api_key=api_key)
+    # Use the REST API directly — avoids SDK version / model-name issues.
+    # gemini-2.0-flash is the model available on this key's project.
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.0-flash:generateContent?key={api_key}"
+    )
 
     prompt = (
         f"You are an AI email assistant. Draft a professional, concise reply to the email below.\n\n"
@@ -291,8 +293,8 @@ def _gemini_draft_reply(
         "- Do NOT include any preamble or explanation — output the draft body only"
     )
 
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-    )
-    return response.text.strip()
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    resp = _requests.post(url, json=payload, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    return data["candidates"][0]["content"]["parts"][0]["text"].strip()
