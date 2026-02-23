@@ -215,16 +215,23 @@ def _draft_reply(
     original_body: str,
     config: dict[str, Any],
 ) -> str:
-    """Generate a contextual draft reply using Claude.
+    """Generate a contextual draft reply using Gemini.
 
-    Falls back to a structured placeholder when ANTHROPIC_API_KEY is
+    Falls back to a structured placeholder when GEMINI_API_KEY is
     not set or the API call fails, so the approval workflow remains
     testable without credentials.
     """
     import os
+    from pathlib import Path as _Path
+    from dotenv import load_dotenv
+
+    # Safety net: load .env in case this skill runs before src.config is imported.
+    load_dotenv(_Path.cwd() / ".env", override=False)
 
     api_key = os.getenv("GEMINI_API_KEY", "")
-    if api_key:
+    if not api_key:
+        logger.warning("GEMINI_API_KEY not set — using fallback draft.")
+    else:
         try:
             return _gemini_draft_reply(
                 api_key=api_key,
@@ -233,7 +240,11 @@ def _draft_reply(
                 original_body=original_body,
             )
         except Exception as exc:
-            logger.warning("Gemini API draft failed, using fallback: %s", exc)
+            logger.error(
+                "Gemini API draft failed (%s: %s) — using fallback.",
+                type(exc).__name__, exc,
+                exc_info=True,
+            )
 
     # Fallback: structured placeholder.
     name_part = from_addr.split("<")[0].strip().rstrip(",").strip()
@@ -258,10 +269,13 @@ def _gemini_draft_reply(
     original_body: str,
 ) -> str:
     """Call Gemini to generate a contextual reply draft."""
-    import google.generativeai as genai  # type: ignore[import]
+    import os as _os
+    from google import genai  # type: ignore[import]
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    # Ensure our explicit key is used — suppress any GOOGLE_API_KEY env var
+    # that the new SDK prefers over GEMINI_API_KEY when both are set.
+    _os.environ.pop("GOOGLE_API_KEY", None)
+    client = genai.Client(api_key=api_key)
 
     prompt = (
         f"You are an AI email assistant. Draft a professional, concise reply to the email below.\n\n"
@@ -277,5 +291,8 @@ def _gemini_draft_reply(
         "- Do NOT include any preamble or explanation — output the draft body only"
     )
 
-    response = model.generate_content(prompt)
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+    )
     return response.text.strip()
