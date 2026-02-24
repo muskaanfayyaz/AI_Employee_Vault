@@ -17,8 +17,8 @@ python -m src.main --dry-run
 
 python -m src.main --schedule
     Silver tier: start the scheduler alongside the filesystem watcher.
-    Adds Gmail and WhatsApp watchers, runs approval checks each cycle,
-    and wires the email drafter skill into the processing pipeline.
+    Adds Gmail, WhatsApp, and LinkedIn watchers, runs approval checks
+    each cycle, and wires the email drafter skill into the pipeline.
 """
 from __future__ import annotations
 
@@ -102,6 +102,10 @@ def run_approval_cycle(vault_root: Path, dry_run: bool) -> None:
     # Silver tier: send approved email drafts via Gmail.
     if approved:
         _send_approved_email_drafts(vault_root, approved, dry_run)
+
+    # Silver tier: post approved LinkedIn drafts.
+    if approved:
+        _post_approved_linkedin_drafts(vault_root, approved, dry_run)
 
     pending_dir = vault_root / "Pending_Approval"
     pending_count = len(list(pending_dir.glob("*.md"))) if pending_dir.exists() else 0
@@ -216,6 +220,138 @@ def _send_approved_email_drafts(vault_root: Path, approved: list, dry_run: bool)
             logger.info("Draft archived to Done/: %s", dest.name)
         else:
             logger.info("[DRY_RUN] Would move %s → Done/", draft_file.name)
+
+
+def _post_approved_linkedin_drafts(vault_root: Path, approved: list, dry_run: bool) -> None:
+    """Post approved LinkedIn drafts via the LinkedIn UGC Posts API.
+
+    Called from :func:`run_approval_cycle` whenever approved items contain
+    LinkedIn post drafts (``source=linkedin_poster``).
+    """
+    import json
+    import os
+    import urllib.request
+    import urllib.error
+
+    li_drafts = [req for req in approved if req.source == "linkedin_poster"]
+    if not li_drafts:
+        return
+
+    token = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
+    if not token:
+        logger.warning(
+            "Approved LinkedIn post draft(s) found but LINKEDIN_ACCESS_TOKEN is not set."
+        )
+        return
+
+    # Fetch the LinkedIn person URN once — needed as the post author.
+    person_urn = _get_linkedin_person_urn(token)
+    if not person_urn:
+        logger.warning("Could not resolve LinkedIn person URN — cannot post.")
+        return
+
+    approved_dir = vault_root / "Approved"
+    done_dir = vault_root / "Done"
+
+    for req in li_drafts:
+        # Locate the draft file by id prefix.
+        draft_file = approved_dir / f"draft-li-post-{req.id[:8]}.md"
+        if not draft_file.exists():
+            draft_file = None
+            for candidate in approved_dir.glob("draft-li-post-*.md"):
+                if req.id[:8] in candidate.name:
+                    draft_file = candidate
+                    break
+        if draft_file is None or not draft_file.exists():
+            logger.warning(
+                "Approved LinkedIn draft for id %s not found in Approved/ — skipping.",
+                req.id[:8],
+            )
+            continue
+
+        body_text = req.body or draft_file.read_text(encoding="utf-8")
+        post_content = _parse_md_section(body_text, "Post Content")
+
+        if not post_content:
+            logger.warning(
+                "Draft %s missing Post Content section — cannot post.", draft_file.name
+            )
+            continue
+
+        if dry_run:
+            logger.info("[DRY_RUN] Would post to LinkedIn: %.80s...", post_content)
+        else:
+            try:
+                payload = {
+                    "author": person_urn,
+                    "lifecycleState": "PUBLISHED",
+                    "specificContent": {
+                        "com.linkedin.ugc.ShareContent": {
+                            "shareCommentary": {"text": post_content},
+                            "shareMediaCategory": "NONE",
+                        }
+                    },
+                    "visibility": {
+                        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
+                    },
+                }
+                data = json.dumps(payload).encode("utf-8")
+                req_obj = urllib.request.Request(
+                    "https://api.linkedin.com/v2/ugcPosts",
+                    data=data,
+                    headers={
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json",
+                        "X-Restli-Protocol-Version": "2.0.0",
+                    },
+                    method="POST",
+                )
+                with urllib.request.urlopen(req_obj, timeout=15) as resp:
+                    resp.read()
+                logger.info("LinkedIn post published successfully.")
+            except Exception as exc:
+                logger.error("Failed to post to LinkedIn: %s", exc)
+                continue  # don't move to Done/ if post failed
+
+        # Move draft: Approved/ → Done/
+        done_dir.mkdir(parents=True, exist_ok=True)
+        dest = done_dir / draft_file.name
+        if not dry_run:
+            if dest.exists():
+                dest = done_dir / f"{draft_file.stem}-{os.urandom(4).hex()}{draft_file.suffix}"
+            draft_file.rename(dest)
+            logger.info("LinkedIn draft archived to Done/: %s", dest.name)
+        else:
+            logger.info("[DRY_RUN] Would move %s → Done/", draft_file.name)
+
+
+def _get_linkedin_person_urn(token: str) -> str:
+    """Fetch the LinkedIn member URN via /v2/userinfo (sub field).
+
+    Returns a string like ``urn:li:person:XXXXXXX`` or empty string on failure.
+    """
+    import json
+    import urllib.request
+    import urllib.error
+
+    req = urllib.request.Request(
+        "https://api.linkedin.com/v2/userinfo",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        sub = data.get("sub", "")
+        if sub:
+            return f"urn:li:person:{sub}"
+        logger.warning("LinkedIn /v2/userinfo returned no 'sub' field: %s", data)
+        return ""
+    except urllib.error.HTTPError as exc:
+        logger.error("LinkedIn /v2/userinfo returned HTTP %d", exc.code)
+        return ""
+    except Exception as exc:
+        logger.error("Could not fetch LinkedIn person URN: %s", exc)
+        return ""
 
 
 def _parse_md_header(text: str, header: str) -> str:
@@ -354,11 +490,13 @@ def run_schedule_loop(vault_root: Path, dry_run: bool) -> None:
     - Filesystem watcher (Bronze, drop_folder → Needs_Action/)
     - Gmail watcher (if Config/gmail_watcher.yaml exists and is enabled)
     - WhatsApp watcher (if Config/whatsapp_watcher.yaml exists and is enabled)
+    - LinkedIn watcher (if Config/linkedin_watcher.yaml exists and is enabled)
     - Scheduler: processing cycle every 30s, approval cycle every 15s
     """
     from src.watchers.filesystem import FilesystemWatcher
     from src.watchers.gmail import GmailWatcher
     from src.watchers.whatsapp import WhatsAppWatcher
+    from src.watchers.linkedin import LinkedInWatcher
     from src.engine.scheduler import Scheduler
     import threading
     import yaml  # type: ignore[import]
@@ -435,6 +573,25 @@ def run_schedule_loop(vault_root: Path, dry_run: bool) -> None:
                 logger.info("WhatsApp watcher enabled.")
         except Exception as exc:
             logger.warning("Could not start WhatsApp watcher: %s", exc)
+
+    # ── LinkedIn watcher (optional) ───────────────────────────────────────────
+    li_config_path = vault_root / "Config" / "linkedin_watcher.yaml"
+    if li_config_path.exists():
+        try:
+            with li_config_path.open(encoding="utf-8") as fh:
+                li_cfg = yaml.safe_load(fh)
+            if li_cfg.get("watcher", {}).get("enabled", False):
+                li_watcher = LinkedInWatcher(li_cfg)
+                _threads.append(threading.Thread(
+                    target=li_watcher.run,
+                    args=(inbox,),
+                    kwargs={"dry_run": dry_run},
+                    daemon=True,
+                    name="linkedin-watcher",
+                ))
+                logger.info("LinkedIn watcher enabled.")
+        except Exception as exc:
+            logger.warning("Could not start LinkedIn watcher: %s", exc)
 
     # ── start all watcher threads ─────────────────────────────────────────────
     for t in _threads:

@@ -38,3 +38,4 @@ node_modules
 
 Config/gmail_token.json
 Config/gmail_credentials.json
+Config/linkedin_credentials.json

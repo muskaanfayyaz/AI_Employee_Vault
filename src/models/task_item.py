@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 _VALID_TYPES = {"file", "email", "message", "social", "erp", "audit"}
-_VALID_SOURCES = {"filesystem", "gmail", "whatsapp", "odoo", "ralph_wiggum"}
+_VALID_SOURCES = {"filesystem", "gmail", "whatsapp", "odoo", "ralph_wiggum", "linkedin", "manual"}
 _VALID_PRIORITIES = {"low", "medium", "high", "urgent"}
 _VALID_STATUSES = {
     "inbox", "needs_action", "planned", "in_progress",

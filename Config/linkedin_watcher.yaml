@@ -1,0 +1,30 @@
+watcher:
+  name: "linkedin-inbox"
+  type: "linkedin"
+  # Set enabled: true after running 'python -m src.scripts.linkedin_auth'
+  # and adding LINKEDIN_ACCESS_TOKEN to your .env file.
+  enabled: true
+  polling_interval_seconds: 300
+
+  # Path is relative to vault root.
+  state_file: "Config/linkedin_processed_ids.json"
+
+  # LinkedIn API base URL (v2).
+  api_url: "https://api.linkedin.com/v2"
+
+  # Watch for pending connection requests.
+  # Requires LinkedIn product with invitation access — NOT included in the
+  # basic "Sign In with LinkedIn using OpenID Connect" product (returns 404).
+  # Set to true only if your app has an approved partner product that grants it.
+  watch_invitations: false
+
+  # Watch for direct messages / conversations.
+  # Requires LinkedIn Partner / Marketing Developer Platform access.
+  # Most developer accounts will receive a 403 — leave this false unless
+  # you have MDP access.
+  watch_messages: false
+
+  # Credential reference — env var NAME only, never the raw token value.
+  # Set LINKEDIN_ACCESS_TOKEN=<token> in your .env file.
+  # Run 'python -m src.scripts.linkedin_auth' to generate a token.
+  credential_ref: LINKEDIN_ACCESS_TOKEN
