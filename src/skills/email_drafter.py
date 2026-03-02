@@ -112,6 +112,8 @@ class EmailDrafterSkill(BaseSkill):
         now = datetime.now(timezone.utc).isoformat()
         draft_filename = f"draft-email-{draft_id[:8]}.md"
         pending_dir = skill_input.vault_root / "Pending_Approval"
+        # Strip quotes so from_addr never breaks YAML string delimiters.
+        yaml_safe_addr = from_addr.replace('"', "").replace("'", "")
 
         draft_content = (
             "---\n"
@@ -126,7 +128,7 @@ class EmailDrafterSkill(BaseSkill):
             f"updated_at: {now}\n"
             "tags: [draft, email-reply]\n"
             "approval:\n"
-            f"  proposed_action: \"Send email reply to {from_addr}\"\n"
+            f"  proposed_action: 'Send email reply to {yaml_safe_addr}'\n"
             "  reasoning: \"FR-017 — outbound email requires human approval\"\n"
             f"  original_item_id: {item.id}\n"
             f"  requested_at: {now}\n"
@@ -215,38 +217,8 @@ def _draft_reply(
     original_body: str,
     config: dict[str, Any],
 ) -> str:
-    """Generate a contextual draft reply using Gemini.
-
-    Falls back to a structured placeholder when GEMINI_API_KEY is
-    not set or the API call fails, so the approval workflow remains
-    testable without credentials.
-    """
-    import os
-    from pathlib import Path as _Path
-    from dotenv import load_dotenv
-
-    # Safety net: load .env in case this skill runs before src.config is imported.
-    load_dotenv(_Path.cwd() / ".env", override=False)
-
-    api_key = os.getenv("GEMINI_API_KEY", "")
-    if not api_key:
-        logger.warning("GEMINI_API_KEY not set — using fallback draft.")
-    else:
-        try:
-            return _gemini_draft_reply(
-                api_key=api_key,
-                from_addr=from_addr,
-                subject=subject,
-                original_body=original_body,
-            )
-        except Exception as exc:
-            logger.error(
-                "Gemini API draft failed (%s: %s) — using fallback.",
-                type(exc).__name__, exc,
-                exc_info=True,
-            )
-
-    # Fallback: structured placeholder.
+    """Return a structured placeholder draft for human editing."""
+    # Gemini drafting disabled — structured placeholder for human editing.
     name_part = from_addr.split("<")[0].strip().rstrip(",").strip()
     if "@" in name_part:
         name_part = name_part.split("@")[0].capitalize()

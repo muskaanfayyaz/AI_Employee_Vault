@@ -1,9 +1,7 @@
 # AI Employee Dashboard
 
-**Last Updated**: 2026-03-02 11:42:09 UTC  
-**Mode**: [DRY_RUN MODE]  
-
-> **[DRY_RUN MODE]** No files were modified.
+**Last Updated**: 2026-03-02 12:14:12 UTC  
+**Mode**: LIVE  
 
 ## Queue Summary
 
@@ -11,18 +9,29 @@
 |--------|-------|
 | Inbox/ | 0 |
 | Needs_Action/ | 0 |
-| Plans/ | 39 |
+| Plans/ | 45 |
 | In_Progress/ | 0 |
 | Pending_Approval/ | 0 |
 | Approved/ | 0 |
-| Rejected/ | 2 |
-| Done/ | 45 |
+| Rejected/ | 8 |
+| Done/ | 51 |
 | Errors/ | 0 |
 | Reports/ | 1 |
 
 ## Recent Activity (last 10)
 
-_No recent activity._
+| Time | Actor | Action | Outcome |
+|------|-------|--------|---------|
+| 2026-03-02T12:02 | executor | executor_executed | success |
+| 2026-03-02T12:02 | triage | triage_executed | success |
+| 2026-03-02T12:02 | planner | planner_executed | success |
+| 2026-03-02T12:02 | executor | executor_executed | success |
+| 2026-03-02T12:04 | approval_manager | approval decision: rejected | success |
+| 2026-03-02T12:05 | approval_manager | approval decision: rejected | success |
+| 2026-03-02T12:05 | approval_manager | approval decision: rejected | success |
+| 2026-03-02T12:05 | approval_manager | approval decision: rejected | success |
+| 2026-03-02T12:05 | approval_manager | approval decision: rejected | success |
+| 2026-03-02T12:09 | approval_manager | approval decision: rejected | success |
 
 ## Integration Health
 
@@ -34,10 +43,10 @@ _No integrations registered._
 
 | Component | Status | Last Check |
 |-----------|--------|------------|
-| Filesystem Watcher | OK | 2026-03-02 11:42:09 UTC |
-| Triage Skill | OK | 2026-03-02 11:42:09 UTC |
-| Planner Skill | OK | 2026-03-02 11:42:09 UTC |
-| Executor Skill | OK | 2026-03-02 11:42:09 UTC |
+| Filesystem Watcher | OK | 2026-03-02 12:14:12 UTC |
+| Triage Skill | OK | 2026-03-02 12:14:12 UTC |
+| Planner Skill | OK | 2026-03-02 12:14:12 UTC |
+| Executor Skill | OK | 2026-03-02 12:14:12 UTC |
 
 ## Stale Approvals (> 24h)
 
