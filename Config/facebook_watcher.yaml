@@ -1,0 +1,22 @@
+# Facebook Social Platform Configuration — AI Employee Gold Tier
+# FR-G012: Facebook is an independently configurable integration.
+# FR-G041: Credentials stored ONLY in .env — only env var names referenced here.
+#
+# Set enabled: true and configure env vars before activating.
+
+social:
+  platform: "facebook"
+  enabled: true                   # Set true when credentials are configured
+
+  # Environment variable names for credentials (FR-G041)
+  credential_refs:
+    access_token: "FACEBOOK_ACCESS_TOKEN"   # Page or User access token
+    page_id: "FACEBOOK_PAGE_ID"             # Facebook Page ID to post to
+
+  # Post constraints (FR-G014)
+  max_chars: 63206
+  max_hashtags: 5
+  tone: "conversational"
+
+  # API settings
+  api_version: "v19.0"              # Facebook Graph API version

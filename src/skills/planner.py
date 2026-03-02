@@ -54,8 +54,13 @@ class PlannerSkill(BaseSkill):
         title_match = re.search(r"^#\s+(.+)$", content, re.MULTILINE)
         title = title_match.group(1).strip() if title_match else item_path.stem
 
-        # Build steps.
-        steps = _generate_steps(lower, item.type, item.priority)
+        # Build steps — try Gemini reasoning first, fall back to rules.
+        steps = _ai_generate_steps(
+            title=title,
+            content=content,
+            item_type=item.type,
+            priority=item.priority,
+        )
         requires_approval = any(kw in lower for kw in _APPROVAL_KEYWORDS)
 
         now = datetime.now(timezone.utc).isoformat()
@@ -95,6 +100,76 @@ class PlannerSkill(BaseSkill):
             actions_taken=actions,
             metadata={"plan_path": str(plan_path), "steps": len(steps)},
         )
+
+
+def _ai_generate_steps(
+    title: str, content: str, item_type: str, priority: str
+) -> list[Step]:
+    """Generate plan steps using Gemini reasoning.
+
+    Falls back to rule-based ``_generate_steps`` when GEMINI_API_KEY is
+    not set or the API call fails.
+    """
+    import os
+    from pathlib import Path as _Path
+    from dotenv import load_dotenv
+
+    load_dotenv(_Path.cwd() / ".env", override=False)
+    api_key = os.getenv("GEMINI_API_KEY", "")
+
+    if api_key:
+        try:
+            return _gemini_plan_steps(api_key, title, content, item_type, priority)
+        except Exception as exc:
+            logger.warning(
+                "Gemini planner failed (%s: %s) — using rule-based fallback.",
+                type(exc).__name__, exc,
+            )
+
+    return _generate_steps(content.lower(), item_type, priority)
+
+
+def _gemini_plan_steps(
+    api_key: str, title: str, content: str, item_type: str, priority: str
+) -> list[Step]:
+    """Call Gemini to reason about the best action steps for this item."""
+    import requests as _requests  # type: ignore[import]
+
+    url = (
+        "https://generativelanguage.googleapis.com/v1beta/models/"
+        f"gemini-2.0-flash:generateContent?key={api_key}"
+    )
+    prompt = (
+        "You are an AI task planner. Given the item below, output a numbered "
+        "list of 3-5 concrete action steps to resolve it.\n\n"
+        f"Type: {item_type}\n"
+        f"Priority: {priority}\n"
+        f"Title: {title}\n\n"
+        f"Content:\n{content[:1500]}\n\n"
+        "Rules:\n"
+        "- Output ONLY a numbered list, one step per line (e.g. '1. Do X')\n"
+        "- Last step must always be: 'Mark item complete and archive'\n"
+        "- Steps must be specific to this item's actual content\n"
+        "- No preamble, no explanation — just the numbered list"
+    )
+
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    resp = _requests.post(url, json=payload, timeout=20)
+    resp.raise_for_status()
+    text = resp.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+
+    steps: list[Step] = []
+    for line in text.splitlines():
+        line = line.strip()
+        match = re.match(r"^\d+[\.\)]\s+(.+)$", line)
+        if match:
+            steps.append(Step(number=len(steps) + 1, description=match.group(1).strip()))
+
+    if not steps:
+        raise ValueError("Gemini returned no parseable steps")
+
+    logger.info("Gemini planner: %d steps generated for '%s'", len(steps), title)
+    return steps
 
 
 def _generate_steps(lower: str, item_type: str, priority: str) -> list[Step]:

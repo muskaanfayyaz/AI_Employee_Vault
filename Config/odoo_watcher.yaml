@@ -1,0 +1,25 @@
+# Odoo Watcher Configuration — AI Employee Gold Tier
+# Implements FR-G007 (Odoo polling) and FR-G008 (last_poll persistence).
+#
+# Set enabled: true and configure env vars before activating.
+# Credentials are NEVER stored here — only env var names are referenced.
+
+watcher:
+  name: "odoo-poller"
+  type: "odoo"
+  enabled: true                    # Set true when Odoo credentials are configured
+  polling_interval_seconds: 60      # Poll every 60 s (FR-G007)
+  state_file: "Config/odoo_last_poll.json"   # Persist last_poll timestamp (FR-G008)
+  page_size: 50                     # Max records per page (paginated reads)
+
+  # Models to watch (all use write_date >= last_poll domain filter)
+  watch_invoices: false              # account.move (invoices + bills + refunds)
+  watch_sales_orders: false         # sale.order
+  watch_contacts: false             # res.partner — enable when needed
+
+  # Environment variable names for credentials (FR-G040 — never store secrets here)
+  credential_refs:
+    url: "ODOO_URL"                 # e.g. https://mycompany.odoo.com
+    db: "ODOO_DB"                   # e.g. mycompany
+    username: "ODOO_USERNAME"       # Odoo login email
+    api_key: "ODOO_API_KEY"         # Odoo API key (Settings → Technical → API Keys)

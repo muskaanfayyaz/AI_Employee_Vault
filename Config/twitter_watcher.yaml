@@ -1,0 +1,28 @@
+# Twitter/X Social Platform Configuration — AI Employee Gold Tier
+# FR-G012: Twitter/X is an independently configurable integration.
+# FR-G041: Credentials stored ONLY in .env — only env var names referenced here.
+#
+# Uses Twitter API v2. Requires a developer app with "Read and Write" permissions.
+#
+# Set enabled: true and configure env vars before activating.
+
+social:
+  platform: "twitter"
+  enabled: true                 # Set true when credentials are configured
+
+  # Environment variable names for credentials (FR-G041)
+  # OAuth 1.0a credentials (required for posting on behalf of a user)
+  credential_refs:
+    api_key: "TWITTER_API_KEY"
+    api_key_secret: "TWITTER_API_KEY_SECRET"
+    access_token: "TWITTER_ACCESS_TOKEN"
+    access_token_secret: "TWITTER_ACCESS_TOKEN_SECRET"
+    bearer_token: "TWITTER_BEARER_TOKEN"     # For read-only operations
+
+  # Post constraints (FR-G014)
+  max_chars: 280
+  max_hashtags: 3
+  tone: "concise"
+
+  # API settings
+  api_version: "v2"                 # Twitter API version

@@ -1,0 +1,26 @@
+# Subscription Audit Configuration — AI Employee Gold Tier
+# Implements FR-G019 (weekly subscription audit) and FR-G022 (read-only).
+#
+# Set audit.enabled: true and configure Odoo env vars before activating.
+# Credentials are NEVER stored here — only env var names are referenced.
+
+audit:
+  enabled: true                    # Set true when Odoo credentials are configured
+  page_size: 50                     # Records per Odoo API page (FR-G007 pagination)
+  look_back_days: 7                 # Anomaly detection window
+  min_amount_at_risk: 0.0           # Filter: skip anomalies below this amount (0 = include all)
+  state_file: "Config/subscription_audit_state.json"
+
+  # Environment variable names for credentials (FR-G041 — never store secrets here)
+  credential_refs:
+    url: "ODOO_URL"
+    db: "ODOO_DB"
+    username: "ODOO_USERNAME"
+    api_key: "ODOO_API_KEY"
+
+# Schedule: when to run the subscription audit
+# Default: Friday 06:00 (day=4, same week as Monday CEO Briefing)
+schedule:
+  day: 4          # 0=Monday, 4=Friday
+  hour: 6
+  minute: 0

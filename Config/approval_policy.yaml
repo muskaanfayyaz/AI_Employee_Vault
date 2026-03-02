@@ -13,9 +13,9 @@
 # Principle IV: Approvals expire after 24h but are NEVER auto-approved.
 
 policy:
-  version: "1.0.0"
+  version: "2.0.0"        # Gold Tier update (FR-G009/G010/G011)
 
-  # FR-017 — these actions REQUIRE human approval before execution
+  # FR-017 / FR-G009 — these actions REQUIRE human approval before execution
   actions_requiring_approval:
     # Email
     - send_email
@@ -23,15 +23,23 @@ policy:
     # Messaging
     - send_message
     - send_whatsapp_message
-    # Social media
+    # Social media (all platforms — FR-G015)
     - social_post
     - publish_post
-    # Financial / ERP
+    - post_to_linkedin
+    - post_to_facebook
+    - post_to_instagram
+    - post_to_twitter
+    # Financial / ERP — Odoo writes (FR-G003, FR-G005, FR-G006)
     - payment
-    - create_record        # Odoo write
-    - update_record        # Odoo write
-    - delete_record        # Odoo write
+    - create_payment        # FR-G006 — inviolable: never without approval
+    - post_invoice          # FR-G005 — confirming/posting a draft invoice
+    - create_record         # Odoo write (generic)
+    - update_record         # Odoo write (generic)
+    - delete_record         # Odoo delete (FR-G009)
+    - archive_record        # Odoo archive
     - odoo_write
+    - journal_write         # Accounting journal write (FR-G009)
     # Contacts
     - add_contact
     - update_contact
@@ -39,7 +47,7 @@ policy:
     - delete_data
     - delete_file
 
-  # FR-018 — these actions are auto-approved (read-only or safe)
+  # FR-018 / FR-G009 — these actions are auto-approved (read-only or safe)
   auto_approved_actions:
     # Reads
     - read_file
@@ -47,13 +55,19 @@ policy:
     - get_email
     - search_email
     - search_emails
-    - search_records       # Odoo read
-    - read_record          # Odoo read
+    - search_records        # Odoo read (FR-G009)
+    - read_record           # Odoo read (FR-G009)
     - odoo_read
+    - fetch_invoices        # FR-G004 — read only
+    - fetch_payments        # FR-G004 — read only
+    - fetch_subscriptions   # FR-G004 — read only
+    - fetch_journal_entries # FR-G004 — read only
+    - create_draft_invoice  # FR-G005 — draft creation only (NOT posting)
     # Planning and reporting
     - create_plan
     - generate_report
     - create_ceo_briefing
+    - subscription_audit_run  # FR-G022 — read-only audit
     # Vault maintenance
     - write_log
     - update_dashboard
@@ -65,5 +79,15 @@ policy:
     - health_check
     - mark_read
 
+  # FR-G011 — any operation not listed above defaults to requiring approval.
+  # This is enforced by the ApprovalManager; the explicit default is stated here.
+  default_unclassified_action: "approval_required"
+
   # Stale threshold — approvals older than this are flagged on the Dashboard
   stale_threshold_hours: 24
+
+  # FR-G010 — users MAY raise (but not lower below) these thresholds
+  financial_thresholds:
+    # Amount below which certain low-risk actions may be auto-approved (future use)
+    # Default: 0 means always require approval regardless of amount
+    auto_approve_below: 0
