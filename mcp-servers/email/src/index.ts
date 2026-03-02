@@ -12,6 +12,7 @@
  * Start:
  *   node dist/index.js
  */
+import path from "path";
 import { config as loadEnv } from "dotenv";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
@@ -23,7 +24,11 @@ import { GmailClient } from "./gmail";
 import { handleDraftEmail, handleSearchEmail, handleSendEmail } from "./tools";
 import type { EmailToolResult } from "./types";
 
-loadEnv();
+// Load .env from the mcp-servers/email directory (not process.cwd() which
+// varies depending on how Claude Code launches the server).
+loadEnv({ path: path.resolve(__dirname, "..", ".env") });
+// Also allow vault-root .env to override (e.g. GMAIL_OAUTH_TOKEN_PATH set there).
+loadEnv({ override: false });
 
 const DRY_RUN =
   process.env.DRY_RUN?.toLowerCase() === "true" ||

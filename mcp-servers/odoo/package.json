@@ -1,0 +1,26 @@
+{
+  "name": "@ai-employee/odoo-mcp",
+  "version": "0.1.0",
+  "description": "Odoo JSON-RPC MCP server for AI Employee Vault — create invoices (draft only), fetch transactions, analyse subscriptions, and request payments via approval workflow",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "dotenv": "^16.4.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

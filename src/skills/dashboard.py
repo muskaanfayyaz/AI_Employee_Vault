@@ -60,6 +60,29 @@ class DashboardSkill(BaseSkill):
             except Exception:
                 pass
 
+        # Integration health (FR-G034).
+        try:
+            from src.engine.integration_registry import IntegrationRegistry  # noqa: PLC0415
+            registry = IntegrationRegistry(vault_root)
+            degraded_names = registry.get_degraded()
+            all_integrations = registry.get_all()
+
+            if not all_integrations:
+                degraded_md = "_No integrations registered._\n"
+            elif not degraded_names:
+                degraded_md = "_All integrations healthy._\n"
+            else:
+                degraded_md = ""
+                for iname in degraded_names:
+                    entry = all_integrations[iname]
+                    istatus = entry.get("status", "unknown").upper()
+                    last_err = (entry.get("last_error") or "")[:80]
+                    last_err_at = (entry.get("last_error_at") or "")[:19]
+                    degraded_md += f"| {iname} | [{istatus}] | {last_err} | {last_err_at} |\n"
+        except Exception as _reg_exc:
+            logger.warning("[Dashboard] IntegrationRegistry unavailable: %s", _reg_exc)
+            degraded_md = "_[DATA UNAVAILABLE]_\n"
+
         # Stale approvals (files in Pending_Approval > 24h old).
         stale: list[str] = []
         pa_dir = vault_root / "Pending_Approval"
@@ -91,6 +114,16 @@ class DashboardSkill(BaseSkill):
             )
         else:
             content += "_No recent activity._\n\n"
+
+        content += (
+            "## Integration Health\n\n"
+            "| Integration | Status | Last Error | Last Error At |\n"
+            "|-------------|--------|------------|---------------|\n"
+        )
+        if degraded_md.startswith("_"):
+            content += degraded_md + "\n"
+        else:
+            content += f"{degraded_md}\n"
 
         content += (
             "## Component Health\n\n"

@@ -1,0 +1,94 @@
+# Ralph Wiggum Autonomous Loop Configuration
+# Implements FR-G023–FR-G028: self-improving autonomous task loop.
+#
+# The loop drives multi-step tasks to completion by cycling the standard
+# processing pipeline (triage → plan → execute → dashboard) until ALL
+# active items have reached a terminal vault folder (Done, Rejected, or
+# Errors), or until max_iterations is reached — whichever comes first.
+#
+# To trigger manually:
+#   python -m src.main --ralph
+#
+# For scheduled runs the loop is wired into the Silver scheduler when
+# --schedule is active (default: Monday 07:00, before the CEO Briefing).
+
+skill:
+  name: "ralph_wiggum_loop"
+  version: "1.0.0"
+  enabled: true
+
+loop:
+  # ── Termination guards ──────────────────────────────────────────────────
+  # Hard cap: exit after this many processing cycles unconditionally.
+  # Prevents runaway execution. Applies even if items remain active.
+  max_iterations: 10
+
+  # Soft stop: exit as soon as all items have left the active pipeline.
+  # When false the loop always runs max_iterations cycles.
+  stop_when_done: true
+
+  # Seconds to wait between consecutive processing cycles.
+  # Allows filesystem watchers and skill side-effects to settle.
+  iteration_interval_seconds: 30
+
+  # ── Folder classification ───────────────────────────────────────────────
+  # Folders where items are still "in-flight" (loop keeps running while
+  # any .md file exists here that is not a -metadata.md sidecar).
+  active_folders:
+    - "Needs_Action"
+    - "Plans"
+    - "In_Progress"
+    - "Pending_Approval"
+    - "Approved"
+
+  # Folders considered terminal (items here count as complete).
+  terminal_folders:
+    - "Done"
+    - "Rejected"
+    - "Errors"
+
+schedule:
+  # Day of week (0=Monday … 6=Sunday).  Default: 0 (Monday).
+  day: 0
+  # Hour in 24h local time.  Runs before CEO Briefing at 08:00.
+  hour: 7
+  # Minute offset.
+  minute: 0
+  # Minimum number of audit-log days required before self-review runs.
+  # The loop skips analysis (but still processes tasks) if fewer days
+  # are available.  (FR-G023)
+  min_log_days: 7
+
+logging:
+  # Write a structured JSON entry for every iteration (FR-G027).
+  log_each_iteration: true
+
+  # Vault sub-directory where review JSON files are written.
+  review_log_dir: "Logs"
+
+  # Filename prefix for daily review logs.
+  # Final filename: <prefix>_YYYY-MM-DD.json
+  review_log_prefix: "RalphWiggum_Review"
+
+  # Tag prepended to every Ralph Wiggum log entry (FR-G027).
+  tag: "[RALPH_WIGGUM]"
+
+self_review:
+  # ── Pattern analysis (FR-G024) ──────────────────────────────────────────
+  # Which failure patterns the loop scans for in audit logs.
+  analyse_failure_rate: true
+  analyse_retry_rate: true
+  analyse_rejection_rate: true
+  analyse_slow_operations: true
+
+  # Operations exceeding this threshold (ms) are flagged as "slow".
+  slow_operation_threshold_ms: 5000
+
+  # ── Proposal routing (FR-G026) ──────────────────────────────────────────
+  # Vault folder where improvement proposals are placed for human review.
+  # The loop MUST NOT route proposals to Approved/ or execute them directly.
+  proposal_destination: "Needs_Action"
+
+  # Skip creating a proposal if an identical one is already pending
+  # approval from a previous cycle. Prevents duplicate flooding. (FR-G028)
+  deduplicate_proposals: true
