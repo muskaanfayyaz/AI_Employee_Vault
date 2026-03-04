@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-_VALID_TYPES = {"file", "email", "message", "social", "erp", "audit"}
+_VALID_TYPES = {"file", "email", "message", "social", "social_post", "erp", "audit"}
 _VALID_SOURCES = {"filesystem", "gmail", "whatsapp", "odoo", "ralph_wiggum", "linkedin", "manual"}
 _VALID_PRIORITIES = {"low", "medium", "high", "urgent"}
 _VALID_STATUSES = {
@@ -30,6 +30,7 @@ class TaskItem:
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     updated_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     tags: list[str] = field(default_factory=list)
+    platforms: list[str] = field(default_factory=list)
     body: str = ""
 
     # ── validation ────────────────────────────────────────────────────
@@ -53,6 +54,9 @@ class TaskItem:
 
     def to_markdown(self) -> str:
         tags_str = "[" + ", ".join(self.tags) + "]"
+        platforms_line = (
+            f"platforms: [{', '.join(self.platforms)}]\n" if self.platforms else ""
+        )
         fm = (
             "---\n"
             f"id: {self.id}\n"
@@ -65,6 +69,7 @@ class TaskItem:
             f"created_at: {self.created_at}\n"
             f"updated_at: {self.updated_at}\n"
             f"tags: {tags_str}\n"
+            + platforms_line +
             "---\n"
         )
         return fm + ("\n" + self.body if self.body else "")
@@ -117,6 +122,7 @@ class TaskItem:
             created_at=raw.get("created_at", datetime.now(timezone.utc).isoformat()),
             updated_at=raw.get("updated_at", datetime.now(timezone.utc).isoformat()),
             tags=_list(raw.get("tags", [])),
+            platforms=_list(raw.get("platforms", [])),
             body=body,
         )
 

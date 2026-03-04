@@ -61,7 +61,9 @@ class TriageSkill(BaseSkill):
 
         # Determine type.
         item_type = item.type
-        if item_type == "file":
+        if item_type == "social_post":
+            item_type = "social"
+        elif item_type == "file":
             for t, keywords in _TYPE_KEYWORDS.items():
                 if any(kw in content for kw in keywords):
                     item_type = t

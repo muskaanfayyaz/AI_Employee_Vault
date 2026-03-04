@@ -26,6 +26,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import time
 import uuid
@@ -188,7 +189,12 @@ class FilesystemWatcher(BaseWatcher):
     ) -> Path:
         """Copy dropped file to Needs_Action/ and write companion metadata .md.
 
-        Returns the path of the created metadata ``.md`` file.
+        If the dropped file already contains valid TaskItem YAML front-matter
+        (i.e. it has a recognised ``type`` field other than the generic
+        ``file``), it is treated as a first-class vault item: the copy is
+        returned directly without creating a separate metadata wrapper.
+
+        Returns the path of the action file to process.
         """
         src_path = Path(event["source"])
         timestamp = datetime.now(timezone.utc)
@@ -203,6 +209,26 @@ class FilesystemWatcher(BaseWatcher):
 
         shutil.copy2(src_path, dest_file)
         self._logger.info("Copied %s → %s", src_path.name, dest_file)
+
+        # ── Check if this is already a TaskItem vault file ──────────────
+        # A file is a first-class vault item when its YAML front-matter
+        # contains a 'type' that the TaskItem model recognises as non-generic.
+        if _is_vault_item(dest_file):
+            _ensure_needs_action_status(dest_file)
+            self._logger.info(
+                "Vault item detected (%s) — skipping metadata wrapper",
+                dest_file.name,
+            )
+            _append_audit_log(
+                log_dir=self._log_dir,
+                item_id=item_id,
+                src_path=src_path,
+                dest_file=dest_file,
+                meta_path=dest_file,
+                timestamp=timestamp,
+                dry_run=False,
+            )
+            return dest_file
 
         # ── Create metadata .md (Task Item) ────────────────────────────
         meta_path = self._needs_action_path / f"{dest_file.stem}-metadata.md"
@@ -256,6 +282,12 @@ class FilesystemWatcher(BaseWatcher):
         self._observer = _make_observer(self._watch_path)
         self._observer.schedule(handler, str(self._watch_path), recursive=False)
         self._observer.start()
+
+        # Queue any files already sitting in drop_folder at startup.
+        for existing in self._watch_path.iterdir():
+            if existing.is_file() and not existing.name.startswith("."):
+                self._event_queue.put(str(existing))
+                self._logger.info("Startup scan: queued pre-existing file %s", existing.name)
 
         super().start()
         observer_type = type(self._observer).__name__
@@ -338,6 +370,44 @@ def _resolve_dry_run() -> bool:
         return bool(DRY_RUN)
     except ImportError:
         return os.getenv("DRY_RUN", "true").lower() in ("1", "true", "yes")
+
+
+_VAULT_ITEM_TYPES = {"email", "message", "social", "social_post", "erp", "audit"}
+
+
+def _is_vault_item(path: Path) -> bool:
+    """Return True if *path* has YAML front-matter with a non-generic 'type'."""
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    if not text.startswith("---"):
+        return False
+    try:
+        end = text.index("---", 3)
+        fm = text[3:end]
+    except ValueError:
+        return False
+    for line in fm.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("type:"):
+            _, _, raw = stripped.partition(":")
+            item_type = raw.strip().strip('"').strip("'")
+            return item_type in _VAULT_ITEM_TYPES
+    return False
+
+
+def _ensure_needs_action_status(path: Path) -> None:
+    """Overwrite the 'status:' line in YAML front-matter with 'needs_action'."""
+    try:
+        text = path.read_text(encoding="utf-8")
+        updated = re.sub(
+            r"^(status:\s*).*$", r"\1needs_action", text, count=1, flags=re.MULTILINE
+        )
+        if updated != text:
+            path.write_text(updated, encoding="utf-8")
+    except OSError:
+        pass
 
 
 def _write_metadata(

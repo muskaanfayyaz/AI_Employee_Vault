@@ -241,38 +241,26 @@ def _send_approved_email_drafts(vault_root: Path, approved: list, dry_run: bool)
 
 
 def _post_approved_linkedin_drafts(vault_root: Path, approved: list, dry_run: bool) -> None:
-    """Post approved LinkedIn drafts via the LinkedIn UGC Posts API.
-
-    Called from :func:`run_approval_cycle` whenever approved items contain
-    LinkedIn post drafts (``source=linkedin_poster``).
-    """
-    import json
-    import os
-    import urllib.request
-    import urllib.error
+    """Post approved LinkedIn drafts via SocialMCPServer (Gold tier FR-G015)."""
+    from src.mcp.social_server import SocialMCPServer
 
     li_drafts = [req for req in approved if req.source == "linkedin_poster"]
     if not li_drafts:
         return
 
-    token = os.getenv("LINKEDIN_ACCESS_TOKEN", "")
-    if not token:
+    mcp = SocialMCPServer(dry_run=dry_run)
+    if not dry_run and not mcp.health_check():
         logger.warning(
-            "Approved LinkedIn post draft(s) found but LINKEDIN_ACCESS_TOKEN is not set."
+            "SocialMCPServer health check failed — LINKEDIN_ACCESS_TOKEN not set."
         )
         return
 
-    # Fetch the LinkedIn person URN once — needed as the post author.
-    person_urn = _get_linkedin_person_urn(token)
-    if not person_urn:
-        logger.warning("Could not resolve LinkedIn person URN — cannot post.")
-        return
+    logger.info("SocialMCPServer (%s v%s) handling LinkedIn drafts.", mcp.name, mcp.version)
 
     approved_dir = vault_root / "Approved"
     done_dir = vault_root / "Done"
 
     for req in li_drafts:
-        # Locate the draft file by id prefix.
         draft_file = approved_dir / f"draft-li-post-{req.id[:8]}.md"
         if not draft_file.exists():
             draft_file = None
@@ -296,42 +284,13 @@ def _post_approved_linkedin_drafts(vault_root: Path, approved: list, dry_run: bo
             )
             continue
 
-        if dry_run:
-            logger.info("[DRY_RUN] Would post to LinkedIn: %.80s...", post_content)
-        else:
-            try:
-                payload = {
-                    "author": person_urn,
-                    "lifecycleState": "PUBLISHED",
-                    "specificContent": {
-                        "com.linkedin.ugc.ShareContent": {
-                            "shareCommentary": {"text": post_content},
-                            "shareMediaCategory": "NONE",
-                        }
-                    },
-                    "visibility": {
-                        "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
-                    },
-                }
-                data = json.dumps(payload).encode("utf-8")
-                req_obj = urllib.request.Request(
-                    "https://api.linkedin.com/v2/ugcPosts",
-                    data=data,
-                    headers={
-                        "Authorization": f"Bearer {token}",
-                        "Content-Type": "application/json",
-                        "X-Restli-Protocol-Version": "2.0.0",
-                    },
-                    method="POST",
-                )
-                with urllib.request.urlopen(req_obj, timeout=15) as resp:
-                    resp.read()
-                logger.info("LinkedIn post published successfully.")
-            except Exception as exc:
-                logger.error("Failed to post to LinkedIn: %s", exc)
-                continue  # don't move to Done/ if post failed
+        result = mcp.post_to_linkedin(post_content)
+        if result.get("status") != "sent":
+            logger.error("LinkedIn post failed: %s", result.get("error"))
+            continue  # don't move to Done/ if post failed
 
-        # Move draft: Approved/ → Done/
+        _log_social_post(vault_root, "linkedin", result.get("post_id", ""), post_content, dry_run)
+
         done_dir.mkdir(parents=True, exist_ok=True)
         dest = done_dir / draft_file.name
         if not dry_run:
@@ -341,35 +300,6 @@ def _post_approved_linkedin_drafts(vault_root: Path, approved: list, dry_run: bo
             logger.info("LinkedIn draft archived to Done/: %s", dest.name)
         else:
             logger.info("[DRY_RUN] Would move %s → Done/", draft_file.name)
-
-
-def _get_linkedin_person_urn(token: str) -> str:
-    """Fetch the LinkedIn member URN via /v2/userinfo (sub field).
-
-    Returns a string like ``urn:li:person:XXXXXXX`` or empty string on failure.
-    """
-    import json
-    import urllib.request
-    import urllib.error
-
-    req = urllib.request.Request(
-        "https://api.linkedin.com/v2/userinfo",
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-        sub = data.get("sub", "")
-        if sub:
-            return f"urn:li:person:{sub}"
-        logger.warning("LinkedIn /v2/userinfo returned no 'sub' field: %s", data)
-        return ""
-    except urllib.error.HTTPError as exc:
-        logger.error("LinkedIn /v2/userinfo returned HTTP %d", exc.code)
-        return ""
-    except Exception as exc:
-        logger.error("Could not fetch LinkedIn person URN: %s", exc)
-        return ""
 
 
 def _parse_md_header(text: str, header: str) -> str:
@@ -767,15 +697,16 @@ def run_schedule_loop(vault_root: Path, dry_run: bool) -> None:
 def _handle_approved_social_posts(
     vault_root: Path, approved: list, dry_run: bool
 ) -> None:
-    """Move approved multi-platform social post drafts to Done/ (Gold tier FR-G015).
+    """Publish approved multi-platform social posts via SocialMCPServer (FR-G015).
 
-    The actual platform API calls (Facebook, Instagram, Twitter publish) are
-    intentionally stubbed — they require platform-specific token handling beyond
-    the scope of this approval-cycle runner.  The key guarantee is that drafts
-    are ONLY moved to Done/ after approval is confirmed, never before.
+    Routes Facebook, Instagram, and Twitter drafts through ``SocialMCPServer``
+    which provides retry logic, credential validation, and health checks.
+    LinkedIn is handled separately by ``_post_approved_linkedin_drafts``.
+
+    Drafts are only moved to ``Done/`` after the platform API confirms success.
     """
-    # Collect drafts from social_poster_{platform} sources (not linkedin_poster,
-    # which is handled separately by _post_approved_linkedin_drafts).
+    from src.mcp.social_server import SocialMCPServer
+
     social_platforms = ("facebook", "instagram", "twitter")
     social_drafts = [
         req for req in approved
@@ -784,14 +715,15 @@ def _handle_approved_social_posts(
     if not social_drafts:
         return
 
+    mcp = SocialMCPServer(dry_run=dry_run)
+    logger.info("SocialMCPServer (%s v%s) handling social post approvals.", mcp.name, mcp.version)
+
     approved_dir = vault_root / "Approved"
     done_dir = vault_root / "Done"
 
     for req in social_drafts:
-        # Extract platform from source field (e.g. "social_poster_facebook" → "facebook")
         platform = (req.source or "").replace("social_poster_", "")
 
-        # Locate the draft file in Approved/.
         draft_file = None
         for candidate in approved_dir.glob(f"draft-{platform}-post-*.md"):
             if req.id[:8] in candidate.name:
@@ -807,6 +739,7 @@ def _handle_approved_social_posts(
 
         body_text = req.body or draft_file.read_text(encoding="utf-8")
         post_content = _parse_md_section(body_text, "Post Content")
+        image_url = _parse_md_section(body_text, "Image URL").strip()
 
         if not post_content:
             logger.warning(
@@ -814,29 +747,74 @@ def _handle_approved_social_posts(
             )
             continue
 
-        if dry_run:
-            logger.info(
-                "[DRY_RUN] Would publish %s post: %.80s...", platform.title(), post_content
-            )
+        # ── Route to platform via SocialMCPServer ─────────────────────────
+        if platform == "twitter":
+            result = mcp.post_to_twitter(post_content)
+            pub_id = result.get("tweet_id", "")
+        elif platform == "facebook":
+            result = mcp.post_to_facebook(post_content)
+            pub_id = result.get("post_id", "")
+        elif platform == "instagram":
+            result = mcp.post_to_instagram(post_content, image_url)
+            pub_id = result.get("media_id", "")
         else:
-            # Platform-specific publish calls can be wired here when credentials
-            # are available.  For now we log the intent and move to Done/.
-            logger.info(
-                "Social post approved for %s — publish via platform API: %.80s",
-                platform.title(), post_content,
+            logger.warning(
+                "No SocialMCPServer tool for platform %r — draft left in Approved/.", platform
             )
+            continue
 
-        # Move draft: Approved/ → Done/ (only after successful publish or dry-run).
+        if result.get("status") != "sent":
+            logger.error(
+                "%s post failed: %s — draft left in Approved/.",
+                platform.title(), result.get("error"),
+            )
+            continue  # do NOT move to Done/ on failure
+
+        _log_social_post(vault_root, platform, pub_id, post_content, dry_run)
+
+        # Move draft: Approved/ → Done/ only on confirmed success
         done_dir.mkdir(parents=True, exist_ok=True)
         dest = done_dir / draft_file.name
         if not dry_run:
-            import os as _os
             if dest.exists():
-                dest = done_dir / f"{draft_file.stem}-{_os.urandom(4).hex()}{draft_file.suffix}"
+                dest = done_dir / f"{draft_file.stem}-{os.urandom(4).hex()}{draft_file.suffix}"
             draft_file.rename(dest)
             logger.info("%s draft archived to Done/: %s", platform.title(), dest.name)
         else:
             logger.info("[DRY_RUN] Would move %s → Done/", draft_file.name)
+
+
+def _log_social_post(
+    vault_root: Path,
+    platform: str,
+    post_id: str,
+    content: str,
+    dry_run: bool,
+) -> None:
+    """Write a structured audit log entry for a published social post.
+
+    Required so CEO Briefing Section 8 (Social Media Activity) can pick
+    up social events from the daily JSON audit log.
+    """
+    from src.engine.logger import AuditLogger
+    from src.models.log_entry import LogEntry
+
+    audit = AuditLogger(vault_root / "Logs")
+    try:
+        entry = LogEntry(
+            actor=f"social_poster_{platform}",
+            action=f"{platform}_post_published",
+            outcome="dry_run" if dry_run else "success",
+            details={
+                "platform": platform,
+                "post_id": post_id,
+                "content_preview": content[:120],
+            },
+            dry_run=dry_run,
+        )
+        audit.log(entry)
+    except Exception as exc:
+        logger.warning("Could not write social post audit log entry: %s", exc)
 
 
 def run_subscription_audit(

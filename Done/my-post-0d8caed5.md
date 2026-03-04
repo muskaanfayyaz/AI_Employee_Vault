@@ -3,11 +3,11 @@ id: test-li-post-001
 type: social
 source: manual
 priority: medium
-status: needs_action
+status: done
 requires_approval: false
 classification: local_only
 created_at: 2026-02-25T00:00:00+00:00
-updated_at: 2026-02-25T00:00:00+00:00
+updated_at: 2026-03-02T12:36:17.049078+00:00
 tags: [linkedin, ai, automation]
 ---
 

@@ -1,6 +1,6 @@
 # AI Employee Dashboard
 
-**Last Updated**: 2026-03-02 12:14:12 UTC  
+**Last Updated**: 2026-03-04 10:59:31 UTC  
 **Mode**: LIVE  
 
 ## Queue Summary
@@ -9,29 +9,22 @@
 |--------|-------|
 | Inbox/ | 0 |
 | Needs_Action/ | 0 |
-| Plans/ | 45 |
-| In_Progress/ | 0 |
+| Plans/ | 53 |
+| In_Progress/ | 3 |
 | Pending_Approval/ | 0 |
 | Approved/ | 0 |
-| Rejected/ | 8 |
-| Done/ | 51 |
+| Rejected/ | 10 |
+| Done/ | 65 |
 | Errors/ | 0 |
-| Reports/ | 1 |
+| Reports/ | 2 |
 
 ## Recent Activity (last 10)
 
 | Time | Actor | Action | Outcome |
 |------|-------|--------|---------|
-| 2026-03-02T12:02 | executor | executor_executed | success |
-| 2026-03-02T12:02 | triage | triage_executed | success |
-| 2026-03-02T12:02 | planner | planner_executed | success |
-| 2026-03-02T12:02 | executor | executor_executed | success |
-| 2026-03-02T12:04 | approval_manager | approval decision: rejected | success |
-| 2026-03-02T12:05 | approval_manager | approval decision: rejected | success |
-| 2026-03-02T12:05 | approval_manager | approval decision: rejected | success |
-| 2026-03-02T12:05 | approval_manager | approval decision: rejected | success |
-| 2026-03-02T12:05 | approval_manager | approval decision: rejected | success |
-| 2026-03-02T12:09 | approval_manager | approval decision: rejected | success |
+| 2026-03-04T10:11 | approval_manager | approval decision: rejected | success |
+| 2026-03-04T10:11 | approval_manager | approval decision: approved | success |
+| 2026-03-04T10:20 | approval_manager | approval decision: approved | success |
 
 ## Integration Health
 
@@ -43,10 +36,10 @@ _No integrations registered._
 
 | Component | Status | Last Check |
 |-----------|--------|------------|
-| Filesystem Watcher | OK | 2026-03-02 12:14:12 UTC |
-| Triage Skill | OK | 2026-03-02 12:14:12 UTC |
-| Planner Skill | OK | 2026-03-02 12:14:12 UTC |
-| Executor Skill | OK | 2026-03-02 12:14:12 UTC |
+| Filesystem Watcher | OK | 2026-03-04 10:59:31 UTC |
+| Triage Skill | OK | 2026-03-04 10:59:31 UTC |
+| Planner Skill | OK | 2026-03-04 10:59:31 UTC |
+| Executor Skill | OK | 2026-03-04 10:59:31 UTC |
 
 ## Stale Approvals (> 24h)
 

@@ -112,19 +112,20 @@ class ExecutorSkill(BaseSkill):
                 except Exception as exc:
                     logger.warning("Could not invoke EmailDrafterSkill: %s", exc)
 
-            # Silver tier: invoke LinkedInPosterSkill for social post draft steps.
-            if item.type == "social" and "draft post" in _step_lower:
+            # Gold tier: invoke SocialPosterSkill for all platforms (LinkedIn, Twitter/X, etc.)
+            if item.type in ("social", "social_post") and "draft post" in _step_lower:
                 try:
-                    from src.skills.linkedin_poster import LinkedInPosterSkill
+                    from src.skills.social_poster import SocialPosterSkill
                     poster_si = SkillInput(item_path=item_path, vault_root=vault_root, dry_run=dry_run)
-                    poster_out = LinkedInPosterSkill().safe_execute(poster_si)
+                    poster_out = SocialPosterSkill().safe_execute(poster_si)
                     if poster_out.success:
                         actions.extend(poster_out.actions_taken)
-                        logger.info("LinkedIn post draft queued for approval: %s", item_path.name)
+                        logger.info("Social post draft queued for approval: %s", item_path.name)
+                        break  # Pause — draft sits in Pending_Approval for human review.
                     else:
-                        logger.warning("LinkedInPosterSkill: %s", poster_out.error)
+                        logger.warning("SocialPosterSkill: %s", poster_out.error)
                 except Exception as exc:
-                    logger.warning("Could not invoke LinkedInPosterSkill: %s", exc)
+                    logger.warning("Could not invoke SocialPosterSkill: %s", exc)
 
             # Mark step done.
             if not dry_run:

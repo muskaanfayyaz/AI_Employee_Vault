@@ -176,29 +176,38 @@ class SocialPosterSkill(BaseSkill):
                 error=str(exc),
             )
 
-        if item.type != "social":
+        if item.type not in ("social", "social_post"):
             return SkillOutput(
                 success=False,
                 result=(
                     f"Item {item.id[:8]} is not a social post "
-                    f"(type={item.type!r}). SocialPosterSkill expects type=social."
+                    f"(type={item.type!r}). SocialPosterSkill expects type=social or social_post."
                 ),
-                error=f"Expected type=social, got {item.type!r}.",
+                error=f"Expected type=social or social_post, got {item.type!r}.",
             )
 
         full_text = item_path.read_text(encoding="utf-8")
-        raw_content = _extract_section(full_text, "Content") or item.body.strip()
+        raw_content = _extract_section(full_text, "Content") or _extract_section(full_text, "Post") or item.body.strip()
         title = _extract_title(full_text) or item_path.stem
 
         # Determine which platforms to draft for.
+        # Priority: 1) explicit override  2) ## Platform section in item
+        #           3) item.platforms field (from YAML frontmatter)  4) config/tags
         config = skill_input.config
-        platforms = self._resolve_platforms(config)
+        item_platform = _extract_section(full_text, "Platform").strip().lower()
+        if item_platform and item_platform in _PLATFORM_META:
+            platforms = [item_platform]
+        elif item.platforms:
+            platforms = [p for p in item.platforms if p in _PLATFORM_META]
+        else:
+            fm_platforms = _extract_frontmatter_platforms(full_text)
+            platforms = fm_platforms if fm_platforms else self._resolve_platforms(config)
 
         if not platforms:
             return SkillOutput(
                 success=False,
                 result="No enabled social platforms configured.",
-                error="Enable at least one platform in Config/<platform>_watcher.yaml.",
+                error="Add a '## Platform' section (e.g. 'twitter') to the item, or enable a platform in Config/<platform>_watcher.yaml.",
             )
 
         pending_dir = skill_input.vault_root / "Pending_Approval"
@@ -367,11 +376,20 @@ def _build_draft_content(
         f"**Original Item**: {item_path.name}  \n\n"
         "## Post Content\n\n"
         f"{post_body}\n\n"
-        "## Original Context\n\n"
+        + (
+            "## Image URL\n\n"
+            "_Paste a public image URL here (required for Instagram feed posts)._\n\n"
+            if platform == "instagram" else ""
+        )
+        + "## Original Context\n\n"
         f"{raw_content or '_No content extracted._'}\n\n"
         "## Approval Instructions\n\n"
         "- [ ] Review draft post above\n"
-        "- [ ] Edit if needed (editing resets approval)\n"
+        + (
+            "- [ ] Add a public image URL in the Image URL section above (required)\n"
+            if platform == "instagram" else ""
+        )
+        + "- [ ] Edit if needed (editing resets approval)\n"
         "- [ ] Change `decision: pending` → `decision: approved` to schedule publish\n"
         "- [ ] Change `decision: pending` → `decision: rejected` to discard\n"
         "- [ ] Note: any edit to Post Content requires a new approval cycle\n"
@@ -419,6 +437,25 @@ def _create_credential_flag_item(
     logger.warning(
         "social_poster [FR-G044]: Credential flag created: Needs_Action/%s", filename
     )
+
+
+def _extract_frontmatter_platforms(text: str) -> list[str]:
+    """Extract 'platforms: [twitter, linkedin]' from YAML frontmatter."""
+    if not text.startswith("---"):
+        return []
+    try:
+        end = text.index("---", 3)
+        fm = text[3:end]
+    except ValueError:
+        return []
+    for line in fm.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("platforms:"):
+            _, _, raw = stripped.partition(":")
+            raw = raw.strip().strip("[]")
+            result = [p.strip().strip('"').strip("'").lower() for p in raw.split(",") if p.strip()]
+            return [p for p in result if p in _PLATFORM_META]
+    return []
 
 
 def _draft_post(

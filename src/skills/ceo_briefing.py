@@ -318,7 +318,8 @@ def _parse_log_entry(e: dict[str, Any], s: _LogSummary) -> None:
         s.slowest_ms = int(dur)
 
     # Integration-specific events
-    operation = e.get("operation", "")
+    # LogEntry serialises "action" not "operation"; fall back so both formats work.
+    operation = e.get("operation", "") or e.get("action", "")
     if integration == "odoo" or "odoo" in actor.lower():
         s.odoo_events.append({
             "timestamp": e.get("timestamp", ""),
@@ -327,11 +328,15 @@ def _parse_log_entry(e: dict[str, Any], s: _LogSummary) -> None:
             "details": str(e.get("details", ""))[:120],
         })
     if any(p in (integration + actor).lower() for p in ["linkedin", "facebook", "instagram", "twitter", "social"]):
+        raw_details = e.get("details", {})
         s.social_events.append({
             "timestamp": e.get("timestamp", ""),
             "operation": operation,
             "outcome": outcome,
-            "details": str(e.get("details", ""))[:120],
+            "actor": actor,
+            "platform": raw_details.get("platform", "") if isinstance(raw_details, dict) else "",
+            "post_id": raw_details.get("post_id", "") or raw_details.get("tweet_id", "") or raw_details.get("media_id", "") if isinstance(raw_details, dict) else "",
+            "content_preview": raw_details.get("content_preview", "") if isinstance(raw_details, dict) else str(raw_details)[:120],
         })
     if e.get("ralph_wiggum_tag"):
         s.ralph_events.append(e)
@@ -717,12 +722,33 @@ def _render_briefing(
     ]
 
     if log_summary.social_events:
-        lines.append(f"**{len(log_summary.social_events)} social media event(s) logged this period.**")
+        lines.append(f"**{len(log_summary.social_events)} social media post(s) published this period.**")
+        lines.append("")
+
+        # Per-platform breakdown
+        platform_counts: dict[str, int] = {}
+        for ev in log_summary.social_events:
+            p = ev.get("platform", "") or next(
+                (x for x in ["linkedin", "facebook", "instagram", "twitter"]
+                 if x in ev.get("actor", "").lower()), "unknown"
+            )
+            platform_counts[p] = platform_counts.get(p, 0) + 1
+        lines += ["| Platform | Posts |", "|----------|-------|"]
+        for p, cnt in sorted(platform_counts.items(), key=lambda x: -x[1]):
+            lines.append(f"| {p.capitalize()} | {cnt} |")
+        lines.append("")
+
+        # Recent post details
+        lines.append("**Recent posts:**")
         lines.append("")
         for ev in log_summary.social_events[:5]:
             ts = ev.get("timestamp", "")[:16]
             op = ev.get("operation", "")
-            lines.append(f"- `{ts}` — `{op}` ({ev.get('outcome', '')})")
+            post_id = ev.get("post_id", "")
+            preview = ev.get("content_preview", "")
+            id_part = f" · ID `{post_id}`" if post_id else ""
+            preview_part = f" · _{preview[:80]}…_" if preview else ""
+            lines.append(f"- `{ts}` — {op} ({ev.get('outcome', '')}){id_part}{preview_part}")
         if len(log_summary.social_events) > 5:
             lines.append(f"- _...and {len(log_summary.social_events) - 5} more_")
     else:

@@ -1,0 +1,27 @@
+---
+id: f7c53320-a82a-4b24-ba40-78e099a00547
+type: social
+source: filesystem
+priority: medium
+status: in_progress
+requires_approval: false
+classification: local_only
+created_at: 2026-03-03T00:00:00+00:00
+updated_at: 2026-03-03T15:34:14.741761+00:00
+tags: [twitter, uxgenie, ai, automation, buildinpublic]
+platforms: [twitter]
+---
+
+# UXGenie AI Employee — Working 24/7
+
+## Post
+
+I don't have a team. I have an AI Employee.
+
+It watches my inbox, triages emails, drafts replies & audits my business — every day, while I sleep.
+
+Built it myself. It asks for approval before doing anything.
+
+This is what solo founder leverage looks like in 2026. 🤖
+
+#BuildInPublic #AI #UXGenie

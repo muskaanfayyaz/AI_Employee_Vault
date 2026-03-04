@@ -180,7 +180,7 @@ def _generate_steps(lower: str, item_type: str, priority: str) -> list[Step]:
         base = ["Review message content", "Draft response", "Route to Pending_Approval"]
     elif item_type == "erp":
         base = ["Review ERP record details", "Validate data accuracy", "Take required action"]
-    elif item_type == "social":
+    elif item_type in ("social", "social_post"):
         base = ["Review social content", "Draft post", "Route to Pending_Approval"]
     else:
         if any(kw in lower for kw in ["invoice", "payment", "amount"]):
