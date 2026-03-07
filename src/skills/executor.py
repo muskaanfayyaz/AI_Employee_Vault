@@ -123,9 +123,14 @@ class ExecutorSkill(BaseSkill):
                         logger.info("Social post draft queued for approval: %s", item_path.name)
                         break  # Pause — draft sits in Pending_Approval for human review.
                     else:
-                        logger.warning("SocialPosterSkill: %s", poster_out.error)
+                        logger.error(
+                            "SocialPosterSkill failed for %s: %s — leaving step pending.",
+                            item_path.name, poster_out.error,
+                        )
+                        break  # Leave step pending; do NOT mark done or move to Done/.
                 except Exception as exc:
-                    logger.warning("Could not invoke SocialPosterSkill: %s", exc)
+                    logger.error("Could not invoke SocialPosterSkill: %s — leaving step pending.", exc)
+                    break  # Leave step pending on exception too.
 
             # Mark step done.
             if not dry_run:

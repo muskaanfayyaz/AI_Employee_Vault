@@ -244,30 +244,31 @@ def _post_approved_linkedin_drafts(vault_root: Path, approved: list, dry_run: bo
     """Post approved LinkedIn drafts via SocialMCPServer (Gold tier FR-G015)."""
     from src.mcp.social_server import SocialMCPServer
 
-    li_drafts = [req for req in approved if req.source == "linkedin_poster"]
+    li_drafts = [req for req in approved if req.source in ("linkedin_poster", "social_poster_linkedin")]
     if not li_drafts:
         return
 
-    mcp = SocialMCPServer(dry_run=dry_run)
-    if not dry_run and not mcp.health_check():
+    import os as _os
+    from dotenv import load_dotenv as _load_dotenv  # type: ignore[import]
+    _load_dotenv(vault_root / ".env", override=False)
+    if not dry_run and not _os.getenv("LINKEDIN_ACCESS_TOKEN"):
         logger.warning(
-            "SocialMCPServer health check failed — LINKEDIN_ACCESS_TOKEN not set."
+            "LINKEDIN_ACCESS_TOKEN not set — cannot post LinkedIn drafts."
         )
         return
 
+    mcp = SocialMCPServer(dry_run=dry_run)
     logger.info("SocialMCPServer (%s v%s) handling LinkedIn drafts.", mcp.name, mcp.version)
 
     approved_dir = vault_root / "Approved"
     done_dir = vault_root / "Done"
 
     for req in li_drafts:
-        draft_file = approved_dir / f"draft-li-post-{req.id[:8]}.md"
-        if not draft_file.exists():
-            draft_file = None
-            for candidate in approved_dir.glob("draft-li-post-*.md"):
-                if req.id[:8] in candidate.name:
-                    draft_file = candidate
-                    break
+        draft_file = None
+        for candidate in approved_dir.glob("draft-li*post-*.md"):
+            if req.id[:8] in candidate.name:
+                draft_file = candidate
+                break
         if draft_file is None or not draft_file.exists():
             logger.warning(
                 "Approved LinkedIn draft for id %s not found in Approved/ — skipping.",
@@ -277,6 +278,7 @@ def _post_approved_linkedin_drafts(vault_root: Path, approved: list, dry_run: bo
 
         body_text = req.body or draft_file.read_text(encoding="utf-8")
         post_content = _parse_md_section(body_text, "Post Content")
+        image_url = _parse_md_section(body_text, "Image URL").strip()
 
         if not post_content:
             logger.warning(
@@ -284,7 +286,7 @@ def _post_approved_linkedin_drafts(vault_root: Path, approved: list, dry_run: bo
             )
             continue
 
-        result = mcp.post_to_linkedin(post_content)
+        result = mcp.post_to_linkedin(post_content, image_url)
         if result.get("status") != "sent":
             logger.error("LinkedIn post failed: %s", result.get("error"))
             continue  # don't move to Done/ if post failed

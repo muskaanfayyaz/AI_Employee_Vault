@@ -189,6 +189,7 @@ class SocialPosterSkill(BaseSkill):
         full_text = item_path.read_text(encoding="utf-8")
         raw_content = _extract_section(full_text, "Content") or _extract_section(full_text, "Post") or item.body.strip()
         title = _extract_title(full_text) or item_path.stem
+        source_image_url = _extract_section(full_text, "Image URL").strip()
 
         # Determine which platforms to draft for.
         # Priority: 1) explicit override  2) ## Platform section in item
@@ -202,6 +203,22 @@ class SocialPosterSkill(BaseSkill):
         else:
             fm_platforms = _extract_frontmatter_platforms(full_text)
             platforms = fm_platforms if fm_platforms else self._resolve_platforms(config)
+
+        # Fallback: read Config/<platform>_watcher.yaml from vault when no platforms
+        # resolved from item content or in-memory config.
+        if not platforms:
+            import yaml as _yaml
+            vault_root = skill_input.vault_root
+            for _p in _ALL_PLATFORMS:
+                _cfg_path = vault_root / "Config" / f"{_p}_watcher.yaml"
+                if _cfg_path.exists():
+                    try:
+                        _data = _yaml.safe_load(_cfg_path.read_text(encoding="utf-8")) or {}
+                        _social = _data.get("social", _data)
+                        if _social.get("enabled", False):
+                            platforms.append(_p)
+                    except Exception:
+                        pass
 
         if not platforms:
             return SkillOutput(
@@ -268,6 +285,7 @@ class SocialPosterSkill(BaseSkill):
                 item_path=item_path,
                 post_body=post_body,
                 raw_content=raw_content,
+                image_url=source_image_url,
             )
 
             if skill_input.dry_run:
@@ -346,6 +364,7 @@ def _build_draft_content(
     item_path: Path,
     post_body: str,
     raw_content: str,
+    image_url: str = "",
 ) -> str:
     """Build the markdown approval draft file content."""
     char_count = len(post_body)
@@ -378,8 +397,11 @@ def _build_draft_content(
         f"{post_body}\n\n"
         + (
             "## Image URL\n\n"
-            "_Paste a public image URL here (required for Instagram feed posts)._\n\n"
-            if platform == "instagram" else ""
+            + (f"{image_url}\n\n" if image_url else "_Paste a public image URL here (required for Instagram feed posts)._\n\n")
+            if platform == "instagram" else
+            "## Image URL\n\n"
+            + (f"{image_url}\n\n" if image_url else "_Paste a public image URL here to attach an image to this LinkedIn post (optional)._\n\n")
+            if platform == "linkedin" else ""
         )
         + "## Original Context\n\n"
         f"{raw_content or '_No content extracted._'}\n\n"
@@ -387,7 +409,9 @@ def _build_draft_content(
         "- [ ] Review draft post above\n"
         + (
             "- [ ] Add a public image URL in the Image URL section above (required)\n"
-            if platform == "instagram" else ""
+            if platform == "instagram" else
+            "- [ ] Optionally add a public image URL in the Image URL section above\n"
+            if platform == "linkedin" else ""
         )
         + "- [ ] Edit if needed (editing resets approval)\n"
         "- [ ] Change `decision: pending` → `decision: approved` to schedule publish\n"
@@ -440,7 +464,12 @@ def _create_credential_flag_item(
 
 
 def _extract_frontmatter_platforms(text: str) -> list[str]:
-    """Extract 'platforms: [twitter, linkedin]' from YAML frontmatter."""
+    """Extract platform(s) from YAML frontmatter.
+
+    Handles both:
+      platform: linkedin          (singular — single platform)
+      platforms: [twitter, linkedin]  (plural — multiple platforms)
+    """
     if not text.startswith("---"):
         return []
     try:
@@ -450,6 +479,12 @@ def _extract_frontmatter_platforms(text: str) -> list[str]:
         return []
     for line in fm.splitlines():
         stripped = line.strip()
+        # Singular: platform: linkedin
+        if stripped.startswith("platform:") and not stripped.startswith("platforms:"):
+            _, _, raw = stripped.partition(":")
+            p = raw.strip().strip('"').strip("'").lower()
+            return [p] if p in _PLATFORM_META else []
+        # Plural: platforms: [twitter, linkedin]
         if stripped.startswith("platforms:"):
             _, _, raw = stripped.partition(":")
             raw = raw.strip().strip("[]")

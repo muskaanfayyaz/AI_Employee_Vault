@@ -44,7 +44,12 @@ _NON_RETRYABLE_HTTP = frozenset({400, 401, 403, 404, 405, 409, 422})
 
 
 def _http_post(url: str, payload: dict, headers: dict, timeout: int = 15) -> dict:
-    """Execute an HTTP POST and return the parsed JSON response.
+    """Execute an HTTP POST and return a dict with the response.
+
+    The LinkedIn Posts API returns 201 with an empty body and puts the
+    created resource URN in the ``X-RestLi-Id`` response header.  This
+    function normalises that pattern: if the body is empty the returned
+    dict will contain ``{"id": <X-RestLi-Id header value>}``.
 
     Raises
     ------
@@ -57,7 +62,15 @@ def _http_post(url: str, payload: dict, headers: dict, timeout: int = 15) -> dic
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            raw = resp.read().decode("utf-8")
+            restli_id = resp.headers.get("X-RestLi-Id", "")
+        if raw.strip():
+            result = json.loads(raw)
+        else:
+            result = {}
+        if restli_id and not result.get("id"):
+            result["id"] = restli_id
+        return result
     except urllib.error.HTTPError as exc:
         body = exc.read().decode("utf-8", errors="replace")
         if exc.code in _NON_RETRYABLE_HTTP:
@@ -122,13 +135,17 @@ class SocialMCPServer(BaseMCPServer):
     # ── LinkedIn ──────────────────────────────────────────────────────────────
 
     @with_retry(base_delay=2, max_retries=3)
-    def post_to_linkedin(self, content: str) -> dict[str, Any]:
-        """Publish a text post to LinkedIn via the UGC Posts API.
+    def post_to_linkedin(self, content: str, image_url: str = "") -> dict[str, Any]:
+        """Publish a text or image post to LinkedIn via the UGC Posts API.
 
         Parameters
         ----------
         content:
             Post body text (max 3 000 chars for LinkedIn).
+        image_url:
+            Optional public image URL. When provided the image is downloaded
+            and uploaded to LinkedIn via the Assets API, then attached to the
+            post as ``shareMediaCategory: IMAGE``.
 
         Returns
         -------
@@ -145,6 +162,30 @@ class SocialMCPServer(BaseMCPServer):
             return {"post_id": "", "status": "failed",
                     "error": "Could not resolve LinkedIn person URN"}
 
+        li_headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+            "X-Restli-Protocol-Version": "2.0.0",
+        }
+
+        asset_urn = ""
+        if image_url:
+            asset_urn = self._upload_linkedin_image(token, person_urn, image_url)
+            if not asset_urn:
+                logger.warning("LinkedIn image upload failed — falling back to text-only post.")
+
+        if asset_urn:
+            share_content = {
+                "shareCommentary": {"text": content},
+                "shareMediaCategory": "IMAGE",
+                "media": [{"status": "READY", "media": asset_urn}],
+            }
+        else:
+            share_content = {
+                "shareCommentary": {"text": content},
+                "shareMediaCategory": "NONE",
+            }
+
         try:
             result = _http_post(
                 url="https://api.linkedin.com/v2/ugcPosts",
@@ -152,21 +193,15 @@ class SocialMCPServer(BaseMCPServer):
                     "author": person_urn,
                     "lifecycleState": "PUBLISHED",
                     "specificContent": {
-                        "com.linkedin.ugc.ShareContent": {
-                            "shareCommentary": {"text": content},
-                            "shareMediaCategory": "NONE",
-                        }
+                        "com.linkedin.ugc.ShareContent": share_content,
                     },
                     "visibility": {
                         "com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"
                     },
                 },
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Content-Type": "application/json",
-                    "X-Restli-Protocol-Version": "2.0.0",
-                },
+                headers=li_headers,
             )
+            # UGC Posts API returns 201; post URN is in `id` field or X-RestLi-Id header.
             post_id = result.get("id", "")
             logger.info("LinkedIn post published — post_id=%s", post_id)
             return {"post_id": post_id, "status": "sent", "error": None}
@@ -176,6 +211,75 @@ class SocialMCPServer(BaseMCPServer):
         except Exception as exc:
             logger.error("LinkedIn post failed: %s", exc)
             return {"post_id": "", "status": "failed", "error": str(exc)}
+
+    def _upload_linkedin_image(self, token: str, person_urn: str, image_url: str) -> str:
+        """Download image from ``image_url`` and upload it to LinkedIn Assets API.
+
+        Returns the asset URN string on success, or empty string on failure.
+        """
+        # Step 1: register the upload
+        try:
+            reg_resp = _http_post(
+                url="https://api.linkedin.com/v2/assets?action=registerUpload",
+                payload={
+                    "registerUploadRequest": {
+                        "recipes": ["urn:li:digitalmediaRecipe:feedshare-image"],
+                        "owner": person_urn,
+                        "serviceRelationships": [{
+                            "relationshipType": "OWNER",
+                            "identifier": "urn:li:userGeneratedContent",
+                        }],
+                    }
+                },
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/json",
+                    "X-Restli-Protocol-Version": "2.0.0",
+                },
+            )
+        except Exception as exc:
+            logger.error("LinkedIn registerUpload failed: %s", exc)
+            return ""
+
+        upload_url = (
+            reg_resp
+            .get("value", {})
+            .get("uploadMechanism", {})
+            .get("com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest", {})
+            .get("uploadUrl", "")
+        )
+        asset_urn = reg_resp.get("value", {}).get("asset", "")
+        if not upload_url or not asset_urn:
+            logger.error("LinkedIn registerUpload missing uploadUrl or asset: %s", reg_resp)
+            return ""
+
+        # Step 2: download image bytes from the provided URL
+        try:
+            req = urllib.request.Request(image_url, headers={"User-Agent": "AI-Employee/1.0"})
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                image_bytes = resp.read()
+        except Exception as exc:
+            logger.error("Could not download image from %s: %s", image_url, exc)
+            return ""
+
+        # Step 3: upload binary to LinkedIn
+        try:
+            upload_req = urllib.request.Request(
+                upload_url,
+                data=image_bytes,
+                method="PUT",
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Content-Type": "application/octet-stream",
+                },
+            )
+            with urllib.request.urlopen(upload_req, timeout=30) as resp:
+                resp.read()  # drain response
+            logger.info("LinkedIn image uploaded — asset=%s", asset_urn)
+            return asset_urn
+        except Exception as exc:
+            logger.error("LinkedIn image PUT failed: %s", exc)
+            return ""
 
     def _get_linkedin_person_urn(self, token: str) -> str:
         """Fetch the LinkedIn member URN via /v2/userinfo."""

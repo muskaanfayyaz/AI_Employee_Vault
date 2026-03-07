@@ -209,6 +209,11 @@ class FilesystemWatcher(BaseWatcher):
 
         shutil.copy2(src_path, dest_file)
         self._logger.info("Copied %s → %s", src_path.name, dest_file)
+        try:
+            src_path.unlink()
+            self._logger.info("Removed from drop_folder: %s", src_path.name)
+        except OSError as exc:
+            self._logger.warning("Could not remove %s from drop_folder: %s", src_path.name, exc)
 
         # ── Check if this is already a TaskItem vault file ──────────────
         # A file is a first-class vault item when its YAML front-matter

@@ -65,6 +65,9 @@ _ORDER_FIELDS = [
 _CONTACT_FIELDS = [
     "id", "name", "email", "phone", "company_name", "create_date",
 ]
+_TASK_FIELDS = [
+    "id", "name", "project_id", "stage_id", "date_deadline", "write_date",
+]
 
 
 class OdooWatcher(BaseWatcher):
@@ -90,6 +93,7 @@ class OdooWatcher(BaseWatcher):
         self._watch_invoices: bool = watcher_cfg.get("watch_invoices", True)
         self._watch_orders: bool = watcher_cfg.get("watch_sales_orders", True)
         self._watch_contacts: bool = watcher_cfg.get("watch_contacts", False)
+        self._watch_tasks: bool = watcher_cfg.get("watch_tasks", False)
         self._page_size: int = int(watcher_cfg.get("page_size", 50))
         self._state_file_rel: str = watcher_cfg.get(
             "state_file", "Config/odoo_last_poll.json"
@@ -169,6 +173,12 @@ class OdooWatcher(BaseWatcher):
             except Exception as exc:
                 self._logger.error("OdooWatcher: contacts poll failed: %s", exc)
 
+        if self._watch_tasks:
+            try:
+                events.extend(self._fetch_tasks(url, db, uid, api_key))
+            except Exception as exc:
+                self._logger.error("OdooWatcher: tasks poll failed: %s", exc)
+
         # Update last_poll timestamp to now (only when not dry-run — caller handles).
         self._last_poll = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
         self._logger.info("OdooWatcher: %d new event(s) detected", len(events))
@@ -200,7 +210,7 @@ class OdooWatcher(BaseWatcher):
         content = (
             "---\n"
             f"id: {item_id}\n"
-            "type: odoo_record\n"
+            "type: erp\n"
             "source: odoo\n"
             f"odoo_model: {odoo_model}\n"
             f"odoo_id: {odoo_id}\n"
@@ -385,6 +395,29 @@ class OdooWatcher(BaseWatcher):
                     "Email": rec.get("email"),
                     "Phone": rec.get("phone"),
                     "Company": rec.get("company_name"),
+                },
+                "detected_at": datetime.now(timezone.utc).isoformat(),
+            })
+        return events
+
+    def _fetch_tasks(
+        self, url: str, db: str, uid: int, api_key: str
+    ) -> list[dict[str, Any]]:
+        """Fetch project tasks updated since last_poll (paginated)."""
+        domain = [["write_date", ">=", self._last_poll]]
+        records = self._paginated_read(url, db, uid, api_key, "project.task", domain, _TASK_FIELDS)
+        events = []
+        for rec in records:
+            events.append({
+                "event_id": f"task-{rec['id']}",
+                "odoo_model": "project.task",
+                "odoo_id": rec["id"],
+                "event_type": "project_task",
+                "summary_fields": {
+                    "Task": rec.get("name"),
+                    "Project": _extract_name(rec.get("project_id")),
+                    "Stage": _extract_name(rec.get("stage_id")),
+                    "Deadline": rec.get("date_deadline"),
                 },
                 "detected_at": datetime.now(timezone.utc).isoformat(),
             })

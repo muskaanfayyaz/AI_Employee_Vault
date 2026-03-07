@@ -202,15 +202,11 @@ def test_post_to_instagram_non_retryable_error(server):
 
 def test_post_to_twitter_tweepy_missing(server):
     """ImportError for tweepy returns a clear failure dict without raising."""
-    import sys
-    original = sys.modules.pop("tweepy", None)
-    try:
+    with patch("builtins.__import__", side_effect=lambda name, *a, **kw: (
+        (_ for _ in ()).throw(ImportError("No module named 'tweepy'"))
+        if name == "tweepy" else __import__(name, *a, **kw)
+    )):
         result = server.post_to_twitter("Hello Twitter!")
-    finally:
-        if original is not None:
-            sys.modules["tweepy"] = original
-        elif "tweepy" in sys.modules:
-            del sys.modules["tweepy"]
 
     assert result["status"] == "failed"
     assert "tweepy" in result["error"].lower()

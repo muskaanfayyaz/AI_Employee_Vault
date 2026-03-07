@@ -13,9 +13,10 @@ watcher:
   page_size: 50                     # Max records per page (paginated reads)
 
   # Models to watch (all use write_date >= last_poll domain filter)
-  watch_invoices: false              # account.move (invoices + bills + refunds)
-  watch_sales_orders: false         # sale.order
+  watch_invoices: false              # account.move (invoices + bills + refunds) — requires Accounting module
+  watch_sales_orders: false         # sale.order — requires Sales module
   watch_contacts: false             # res.partner — enable when needed
+  watch_tasks: true                 # project.task — enabled (Project module installed)
 
   # Environment variable names for credentials (FR-G040 — never store secrets here)
   credential_refs:

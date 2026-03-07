@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 _VALID_TYPES = {"file", "email", "message", "social", "social_post", "erp", "audit"}
-_VALID_SOURCES = {"filesystem", "gmail", "whatsapp", "odoo", "ralph_wiggum", "linkedin", "manual"}
+_VALID_SOURCES = {"filesystem", "gmail", "whatsapp", "odoo", "ralph_wiggum", "linkedin", "manual", "drop_folder"}
 _VALID_PRIORITIES = {"low", "medium", "high", "urgent"}
 _VALID_STATUSES = {
     "inbox", "needs_action", "planned", "in_progress",
@@ -111,6 +111,11 @@ class TaskItem:
             s = str(v).strip("[]")
             return [x.strip() for x in s.split(",") if x.strip()] if s else []
 
+        # Accept both `platform: linkedin` (singular) and `platforms: [linkedin]` (plural).
+        platforms_raw = raw.get("platforms", [])
+        if not platforms_raw and "platform" in raw:
+            platforms_raw = [raw["platform"]]
+
         return cls(
             id=raw.get("id", str(uuid.uuid4())),
             type=raw.get("type", "file"),
@@ -122,7 +127,7 @@ class TaskItem:
             created_at=raw.get("created_at", datetime.now(timezone.utc).isoformat()),
             updated_at=raw.get("updated_at", datetime.now(timezone.utc).isoformat()),
             tags=_list(raw.get("tags", [])),
-            platforms=_list(raw.get("platforms", [])),
+            platforms=_list(platforms_raw),
             body=body,
         )
 

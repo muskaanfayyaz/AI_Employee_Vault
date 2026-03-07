@@ -1,14 +1,13 @@
 ---
-id: af0b170d-46c4-41d3-b0c1-4371c5f91727
+id: 37388c78-f0ae-46ef-9b84-2920cf51a5e3
 type: email
 source: gmail
-source_id: 19cb8b2fbad1b1ae
 priority: medium
-status: needs_action
+status: done
 requires_approval: false
 classification: local_only
-created_at: 2026-03-04T12:15:51.551904+00:00
-updated_at: 2026-03-04T12:15:51.551904+00:00
+created_at: 2026-03-07T07:13:44.790207+00:00
+updated_at: 2026-03-07T07:13:58.193991+00:00
 tags: []
 ---
 
@@ -16,8 +15,8 @@ tags: []
 
 **From**: UXGENIE <notifications@uxgenie.odoo.com>  
 **Subject**: UXGENIE: Your Odoo Periodic Digest  
-**Date**: Wed, 04 Mar 2026 11:54:22 -0000  
-**Gmail ID**: `19cb8b2fbad1b1ae`  
+**Date**: Thu, 05 Mar 2026 11:54:25 -0000  
+**Gmail ID**: `19cbdd96150c7859`  
 
 ## Content
 
@@ -32,7 +31,7 @@ UXGENIE
 
 
 
-Your Odoo Periodic Digest - March 04, 2026
+Your Odoo Periodic Digest - March 05, 2026
 
 
 
@@ -45,9 +44,10 @@ Your Odoo Periodic Digest - March 04, 2026
 
 
 
-Tip: How to ping users in internal notes?
-Type "@" to notify someone in a message, or "#" to link to a channel. Try to notify @OdooBot to test the feature.
-milk-notifications [7]
+Tip: Knowledge is power
+When following documents, use the pencil icon to fine-tune the information you want to receive.
+Follow a project / sales team to keep track of this project's tasks / this team's opportunities.
+milk-following [7]
 
 
 
@@ -109,7 +109,7 @@ Powered by
 [4] https://play.google.com/store/apps/details?id=com.odoo.mobile
 [5] https://itunes.apple.com/us/app/odoo/id1272543640
 [6] https://www.odoo.com
-[7] https://download.odoocdn.com/digests/digest/static/src/img/milk-notifications.png
+[7] https://download.odoocdn.com/digests/digest/static/src/img/milk-following.png
 [8] https://www.odoo.com/web/image/38874595-16ef5349/odoo-mobile.png
 [9] https://download.odoocdn.com/digests/digest/static/src/img/google_play.png
 [10] https://download.odoocdn.com/digests/digest/static/src/img/app_store.png
