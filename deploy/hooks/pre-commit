@@ -16,16 +16,23 @@ set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 VENV_PYTHON="${REPO_ROOT}/.venv/bin/python3"
-SYSTEM_PYTHON="$(command -v python3 2>/dev/null || true)"
+VENV_PYTHON_WIN="${REPO_ROOT}/.venv/Scripts/python"
+SYSTEM_PYTHON3="$(command -v python3 2>/dev/null || true)"
+SYSTEM_PYTHON="$(command -v python 2>/dev/null || true)"
 
-# ── choose python interpreter ────────────────────────────────────────────────
+# ── choose python interpreter (venv first, then system; supports Windows) ────
 if [ -x "${VENV_PYTHON}" ]; then
   PYTHON="${VENV_PYTHON}"
-elif [ -n "${SYSTEM_PYTHON}" ]; then
+elif [ -x "${VENV_PYTHON_WIN}.exe" ] || [ -x "${VENV_PYTHON_WIN}" ]; then
+  PYTHON="${VENV_PYTHON_WIN}"
+elif [ -n "${SYSTEM_PYTHON3}" ]; then
+  PYTHON="${SYSTEM_PYTHON3}"
+elif [ -n "${SYSTEM_PYTHON}" ] && "${SYSTEM_PYTHON}" --version 2>&1 | grep -q "Python 3"; then
   PYTHON="${SYSTEM_PYTHON}"
 else
-  echo "⚠️  pre-commit: python3 not found — skipping secrets scan (risk!)"
-  exit 0
+  echo "❌ pre-commit: Python 3 not found — cannot run secrets scan."
+  echo "   Fix: activate your venv or ensure Python 3 is on PATH."
+  exit 1
 fi
 
 # ── run the Python secrets guard ─────────────────────────────────────────────
