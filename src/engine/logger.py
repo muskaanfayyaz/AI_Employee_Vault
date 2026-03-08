@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +12,13 @@ from src.models.log_entry import LogEntry
 
 _log = logging.getLogger(__name__)
 
+# fcntl is Unix-only; Windows falls back to a no-op context manager.
+try:
+    import fcntl as _fcntl
+    _HAVE_FCNTL = True
+except ImportError:
+    _HAVE_FCNTL = False
+
 
 class AuditLogger:
     """Append-only audit log writer.
@@ -18,6 +26,9 @@ class AuditLogger:
     Writes ``LogEntry`` objects to ``Logs/YYYY-MM-DD.json`` as a JSON
     array. Each call to ``log()`` appends one entry. Redaction is
     applied to ``details`` string values before writing.
+
+    File writes are protected by an exclusive ``fcntl.flock`` lock so
+    concurrent agents cannot corrupt the log (S-02 fix).
     """
 
     def __init__(self, logs_dir: Path) -> None:
@@ -35,21 +46,30 @@ class AuditLogger:
 
         timestamp = datetime.fromisoformat(entry.timestamp)
         log_file = self._logs_dir / timestamp.strftime("%Y-%m-%d.json")
+        lock_file = log_file.with_suffix(".json.lock")
 
-        entries: list[dict] = []
-        if log_file.exists():
+        with open(lock_file, "w") as lf:
+            if _HAVE_FCNTL:
+                _fcntl.flock(lf, _fcntl.LOCK_EX)
             try:
-                entries = json.loads(log_file.read_text(encoding="utf-8"))
-                if not isinstance(entries, list):
-                    entries = []
-            except (json.JSONDecodeError, OSError):
-                entries = []
+                entries: list[dict] = []
+                if log_file.exists():
+                    try:
+                        entries = json.loads(log_file.read_text(encoding="utf-8"))
+                        if not isinstance(entries, list):
+                            entries = []
+                    except (json.JSONDecodeError, OSError):
+                        entries = []
 
-        entries.append(raw)
-        log_file.write_text(
-            json.dumps(entries, indent=2, ensure_ascii=False),
-            encoding="utf-8",
-        )
+                entries.append(raw)
+                log_file.write_text(
+                    json.dumps(entries, indent=2, ensure_ascii=False),
+                    encoding="utf-8",
+                )
+            finally:
+                if _HAVE_FCNTL:
+                    _fcntl.flock(lf, _fcntl.LOCK_UN)
+
         _log.debug("Logged: %s → %s", entry.action, log_file.name)
         return log_file
 

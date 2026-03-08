@@ -420,8 +420,8 @@ def _log_skill(audit: "AuditLogger", skill_name: str, out: "SkillOutput",
             dry_run=dry_run,
         )
         audit.log(entry)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to write audit log for %s: %s", skill_name, exc)
 
 
 def run_watcher_loop(vault_root: Path, dry_run: bool) -> None:

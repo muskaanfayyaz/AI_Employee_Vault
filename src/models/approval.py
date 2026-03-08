@@ -189,7 +189,13 @@ class ApprovalRequest:
 
     def to_file(self, path: Path) -> None:
         """Write to a ``.md`` file at *path*."""
-        path.write_text(self.to_markdown(), encoding="utf-8")
+        content = self.to_markdown()
+        try:
+            from src.config import credential_leak_check
+            credential_leak_check(content)
+        except ImportError:
+            pass  # config not available (e.g. tests without dotenv)
+        path.write_text(content, encoding="utf-8")
 
     # ── Parsing ──────────────────────────────────────────────────────────────
 
