@@ -39,3 +39,20 @@ node_modules
 Config/gmail_token.json
 Config/gmail_credentials.json
 Config/linkedin_credentials.json
+
+# Platinum Tier: secrets and transient files (never synced)
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*secret*
+credentials*
+.Dashboard.lock
+*.tmp
+
+# PM2 / Node artefacts (deploy tooling, not vault content)
+node_modules/
+.pm2/

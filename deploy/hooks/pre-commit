@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+# pre-commit: Secrets guard hook for AI Employee vault.
+#
+# Blocks any commit that would introduce secrets, credentials, or
+# sensitive files into the Git-synced vault.
+#
+# Install:
+#   cp deploy/hooks/pre-commit .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+#
+# Bypass (only for legitimate non-secret high-entropy content):
+#   Add '# nosecret' to the end of the line in the file, OR
+#   Add the file path to .secretsignore in the vault root.
+
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+VENV_PYTHON="${REPO_ROOT}/.venv/bin/python3"
+SYSTEM_PYTHON="$(command -v python3 2>/dev/null || true)"
+
+# ── choose python interpreter ────────────────────────────────────────────────
+if [ -x "${VENV_PYTHON}" ]; then
+  PYTHON="${VENV_PYTHON}"
+elif [ -n "${SYSTEM_PYTHON}" ]; then
+  PYTHON="${SYSTEM_PYTHON}"
+else
+  echo "⚠️  pre-commit: python3 not found — skipping secrets scan (risk!)"
+  exit 0
+fi
+
+# ── run the Python secrets guard ─────────────────────────────────────────────
+"${PYTHON}" -m src.sync.secrets_guard --staged
+EXIT_CODE=$?
+
+if [ "${EXIT_CODE}" -ne 0 ]; then
+  echo ""
+  echo "Commit aborted. Fix the issues above and try again."
+  echo "If this is a false positive, add '# nosecret' to the line."
+  exit 1
+fi
+
+exit 0

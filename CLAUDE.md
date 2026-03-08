@@ -212,6 +212,8 @@ See `.specify/memory/constitution.md` for code quality, testing, performance, se
 ## Active Technologies
 - Python 3.12 + watchdog (filesystem), schedule (cron), (001-ai-employee-system)
 - File-based — Obsidian vault folders with markdown + YAML (001-ai-employee-system)
+- Python 3.12 (existing; no change) + watchdog 4.x, schedule 1.2, python-dotenv 1.0, PyYAML 6.0, fcntl (stdlib), subprocess (stdlib, for git), PM2 (Node.js, process manager on VM) (001-platinum-tier)
+- File-based (vault folder tree as database; Git as version history) (001-platinum-tier)
 
 ## Recent Changes
 - 001-ai-employee-system: Added Python 3.12 + watchdog (filesystem), schedule (cron),
