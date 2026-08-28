@@ -1,0 +1,220 @@
+{
+  "repository": "D:\\AI_Employee_Vault",
+  "documents_scanned": 385,
+  "tokenizer": "gemini_api_count_tokens",
+  "model": "gemini-3.6-flash",
+  "broad_k": 25,
+  "top_k": 8,
+  "average_saved_percent": 94.46,
+  "results": [
+    {
+      "task": "retry reliability",
+      "baseline_tokens": 586002,
+      "baseline_files": 385,
+      "optimized_tokens": 32728,
+      "optimized_files": 8,
+      "saved_tokens": 553274,
+      "saved_percent": 94.42,
+      "selected": [
+        {
+          "path": "src\\engine\\retry.py",
+          "score": 65.0,
+          "tokens": 2516
+        },
+        {
+          "path": "history\\prompts\\001-ai-employee-system\\0007-silver-gmail-watcher-retry-decorator.green.prompt.md",
+          "score": 60.0,
+          "tokens": 1241
+        },
+        {
+          "path": "tests\\unit\\test_retry.py",
+          "score": 60.0,
+          "tokens": 1797
+        },
+        {
+          "path": "tests\\unit\\test_social_mcp_server.py",
+          "score": 50.0,
+          "tokens": 3125
+        },
+        {
+          "path": "src\\mcp\\odoo_server.py",
+          "score": 50.0,
+          "tokens": 4599
+        },
+        {
+          "path": "src\\mcp\\social_server.py",
+          "score": 50.0,
+          "tokens": 4781
+        },
+        {
+          "path": "src\\engine\\ralph_wiggum_loop.py",
+          "score": 50.0,
+          "tokens": 7057
+        },
+        {
+          "path": "README.md",
+          "score": 50.0,
+          "tokens": 7612
+        }
+      ]
+    },
+    {
+      "task": "approval safety",
+      "baseline_tokens": 586002,
+      "baseline_files": 385,
+      "optimized_tokens": 21012,
+      "optimized_files": 8,
+      "saved_tokens": 564990,
+      "saved_percent": 96.41,
+      "selected": [
+        {
+          "path": "mcp-servers\\odoo\\src\\approval.ts",
+          "score": 65.0,
+          "tokens": 1059
+        },
+        {
+          "path": "src\\models\\approval.py",
+          "score": 65.0,
+          "tokens": 2701
+        },
+        {
+          "path": "src\\approval\\manager.py",
+          "score": 65.0,
+          "tokens": 2987
+        },
+        {
+          "path": "Config\\approval_policy.yaml",
+          "score": 60.0,
+          "tokens": 975
+        },
+        {
+          "path": "history\\prompts\\001-ai-employee-system\\0009-approval-workflow-model-manager.green.prompt.md",
+          "score": 60.0,
+          "tokens": 1504
+        },
+        {
+          "path": "tests\\unit\\test_approval_model.py",
+          "score": 60.0,
+          "tokens": 1834
+        },
+        {
+          "path": "tests\\unit\\test_approval_manager.py",
+          "score": 60.0,
+          "tokens": 3181
+        },
+        {
+          "path": "src\\skills\\process_needs_action.py",
+          "score": 55.0,
+          "tokens": 6771
+        }
+      ]
+    },
+    {
+      "task": "self improvement",
+      "baseline_tokens": 586002,
+      "baseline_files": 385,
+      "optimized_tokens": 56222,
+      "optimized_files": 8,
+      "saved_tokens": 529780,
+      "saved_percent": 90.41,
+      "selected": [
+        {
+          "path": "specs\\002-gold-tier\\spec.md",
+          "score": 100.0,
+          "tokens": 8113
+        },
+        {
+          "path": "src\\engine\\ralph_wiggum_loop.py",
+          "score": 90.0,
+          "tokens": 7057
+        },
+        {
+          "path": "specs\\001-ai-employee-system\\tasks.md",
+          "score": 80.0,
+          "tokens": 15343
+        },
+        {
+          "path": "README.md",
+          "score": 60.0,
+          "tokens": 7612
+        },
+        {
+          "path": "specs\\001-ai-employee-system\\spec.md",
+          "score": 60.0,
+          "tokens": 8610
+        },
+        {
+          "path": "specs\\001-ai-employee-system\\plan.md",
+          "score": 55.0,
+          "tokens": 8254
+        },
+        {
+          "path": "src\\agents\\identity.py",
+          "score": 50.0,
+          "tokens": 582
+        },
+        {
+          "path": "src\\models\\log_entry.py",
+          "score": 50.0,
+          "tokens": 651
+        }
+      ]
+    },
+    {
+      "task": "context optimization",
+      "baseline_tokens": 586002,
+      "baseline_files": 385,
+      "optimized_tokens": 19947,
+      "optimized_files": 8,
+      "saved_tokens": 566055,
+      "saved_percent": 96.6,
+      "selected": [
+        {
+          "path": "benchmarks\\benchmark-results-20v6.json",
+          "score": 55.0,
+          "tokens": 2747
+        },
+        {
+          "path": "benchmarks\\benchmark-results.json",
+          "score": 55.0,
+          "tokens": 3437
+        },
+        {
+          "path": "benchmarks\\benchmark-results-30v10.json",
+          "score": 55.0,
+          "tokens": 4151
+        },
+        {
+          "path": "history\\prompts\\001-ai-employee-system\\0015-claude-email-drafter-contextual.green.prompt.md",
+          "score": 45.0,
+          "tokens": 546
+        },
+        {
+          "path": "benchmarks\\token_cost_benchmark.py",
+          "score": 45.0,
+          "tokens": 3027
+        },
+        {
+          "path": "src\\models\\plan.py",
+          "score": 40.0,
+          "tokens": 1292
+        },
+        {
+          "path": "Reports\\CEO_Briefing_2026-03-02.md",
+          "score": 40.0,
+          "tokens": 2139
+        },
+        {
+          "path": "Reports\\CEO_Briefing_2026-03-07.md",
+          "score": 40.0,
+          "tokens": 2608
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Measures context-token reduction only.",
+    "Does not prove equal task quality or task success.",
+    "Document ranking uses a transparent lexical relevance heuristic."
+  ]
+}

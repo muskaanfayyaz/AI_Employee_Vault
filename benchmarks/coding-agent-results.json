@@ -1,0 +1,214 @@
+{
+  "benchmark": "coding-agent-context-optimization",
+  "version": 1,
+  "repository": "D:\\AI_Employee_Vault",
+  "documents_scanned": 383,
+  "tokenizer": "Gemini API count_tokens",
+  "model": "gemini-3.6-flash",
+  "top_k": 8,
+  "baseline_tokens": 579176,
+  "average_reduction_percent": 89.74,
+  "average_expected_file_coverage": 0.1667,
+  "tasks": [
+    {
+      "task": "retry reliability",
+      "prompt": "You are working on this repository's coding agent. Investigate the retry mechanism and explain how you would improve retry reliability, failure recovery, and backoff behavior. Identify the relevant implementation and tests, then propose a concrete code-level change.",
+      "baseline_tokens": 579176,
+      "optimized_tokens": 60009,
+      "tokens_saved": 519167,
+      "reduction_percent": 89.64,
+      "top_k": 8,
+      "selected_files": [
+        {
+          "path": "specs/002-gold-tier/spec.md",
+          "score": 580.0,
+          "tokens": 8113
+        },
+        {
+          "path": "specs/001-ai-employee-system/tasks.md",
+          "score": 565.0,
+          "tokens": 15343
+        },
+        {
+          "path": "benchmarks/coding_agent_benchmark.py",
+          "score": 535.0,
+          "tokens": 3460
+        },
+        {
+          "path": "specs/001-ai-employee-system/spec.md",
+          "score": 530.0,
+          "tokens": 8610
+        },
+        {
+          "path": "specs/001-ai-employee-system/plan.md",
+          "score": 470.0,
+          "tokens": 8254
+        },
+        {
+          "path": "src/engine/ralph_wiggum_loop.py",
+          "score": 460.0,
+          "tokens": 7057
+        },
+        {
+          "path": "README.md",
+          "score": 390.0,
+          "tokens": 7612
+        },
+        {
+          "path": "history/prompts/001-ai-employee-system/0007-silver-gmail-watcher-retry-decorator.green.prompt.md",
+          "score": 360.0,
+          "tokens": 1241
+        }
+      ],
+      "coverage": {
+        "expected_files": [
+          "src/engine/retry.py",
+          "tests/unit/test_retry.py"
+        ],
+        "matched_files": [],
+        "missing_files": [
+          "src/engine/retry.py",
+          "tests/unit/test_retry.py"
+        ],
+        "coverage": 0.0
+      }
+    },
+    {
+      "task": "approval safety",
+      "prompt": "You are working on this repository's coding agent. Investigate the approval workflow and explain how you would prevent unsafe irreversible actions while preserving useful automation. Identify the relevant implementation, policy, and tests, then propose a concrete code-level improvement.",
+      "baseline_tokens": 579176,
+      "optimized_tokens": 59443,
+      "tokens_saved": 519733,
+      "reduction_percent": 89.74,
+      "top_k": 8,
+      "selected_files": [
+        {
+          "path": "benchmarks/coding_agent_benchmark.py",
+          "score": 530.0,
+          "tokens": 3460
+        },
+        {
+          "path": "specs/002-gold-tier/spec.md",
+          "score": 515.0,
+          "tokens": 8113
+        },
+        {
+          "path": "specs/001-ai-employee-system/tasks.md",
+          "score": 485.0,
+          "tokens": 15343
+        },
+        {
+          "path": "specs/001-ai-employee-system/spec.md",
+          "score": 455.0,
+          "tokens": 8610
+        },
+        {
+          "path": "specs/001-ai-employee-system/plan.md",
+          "score": 375.0,
+          "tokens": 8254
+        },
+        {
+          "path": "src/engine/ralph_wiggum_loop.py",
+          "score": 365.0,
+          "tokens": 7057
+        },
+        {
+          "path": "history/prompts/001-ai-employee-system/0009-approval-workflow-model-manager.green.prompt.md",
+          "score": 350.0,
+          "tokens": 1504
+        },
+        {
+          "path": "src/skills/process_needs_action.py",
+          "score": 345.0,
+          "tokens": 6771
+        }
+      ],
+      "coverage": {
+        "expected_files": [
+          "config/approval_policy.yaml",
+          "src/approval/manager.py",
+          "src/models/approval.py",
+          "tests/unit/test_approval_manager.py"
+        ],
+        "matched_files": [],
+        "missing_files": [
+          "config/approval_policy.yaml",
+          "src/approval/manager.py",
+          "src/models/approval.py",
+          "tests/unit/test_approval_manager.py"
+        ],
+        "coverage": 0.0
+      }
+    },
+    {
+      "task": "context optimization",
+      "prompt": "You are optimizing a coding agent's context window. Given this repository, determine which files are actually necessary to answer a coding question about context selection and token reduction. Explain how irrelevant context can be removed while retaining the information needed for reliable coding decisions. Propose a concrete retrieval or context optimization strategy.",
+      "baseline_tokens": 579176,
+      "optimized_tokens": 58834,
+      "tokens_saved": 520342,
+      "reduction_percent": 89.84,
+      "top_k": 8,
+      "selected_files": [
+        {
+          "path": "benchmarks/coding_agent_benchmark.py",
+          "score": 1145.0,
+          "tokens": 3460
+        },
+        {
+          "path": "benchmarks/token_cost_benchmark.py",
+          "score": 795.0,
+          "tokens": 3076
+        },
+        {
+          "path": "specs/001-ai-employee-system/spec.md",
+          "score": 745.0,
+          "tokens": 8610
+        },
+        {
+          "path": "specs/002-gold-tier/spec.md",
+          "score": 710.0,
+          "tokens": 8113
+        },
+        {
+          "path": "src/main.py",
+          "score": 670.0,
+          "tokens": 12362
+        },
+        {
+          "path": "benchmarks/README.md",
+          "score": 650.0,
+          "tokens": 562
+        },
+        {
+          "path": "specs/001-ai-employee-system/tasks.md",
+          "score": 630.0,
+          "tokens": 15343
+        },
+        {
+          "path": "src/engine/ralph_wiggum_loop.py",
+          "score": 625.0,
+          "tokens": 7057
+        }
+      ],
+      "coverage": {
+        "expected_files": [
+          "benchmarks/token_cost_benchmark.py",
+          "readme.md"
+        ],
+        "matched_files": [
+          "benchmarks/token_cost_benchmark.py"
+        ],
+        "missing_files": [
+          "readme.md"
+        ],
+        "coverage": 0.5
+      }
+    }
+  ],
+  "limitations": [
+    "Token reduction alone does not prove equal task quality.",
+    "Expected-file coverage is a structural proxy, not a task-success metric.",
+    "The retrieval method is a transparent lexical heuristic.",
+    "A stronger evaluation should compare actual coding-agent outputs."
+  ]
+}
